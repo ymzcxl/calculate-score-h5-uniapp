@@ -1,6 +1,6 @@
 {
     "name" : "scoring",
-    "appid" : "__UNI__FB8D6DF",
+    "appid" : "__UNI__B6F03FB",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : "100",
@@ -50,7 +50,7 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "touristappid",
+        "appid" : "wxd51f65e5174106ee",
         "setting" : {
             "urlCheck" : false
         },
