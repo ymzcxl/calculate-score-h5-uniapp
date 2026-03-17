@@ -99,7 +99,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { currentConfig } from '../../config/env';
 
 const phone = ref('');
 const password = ref('');
@@ -108,10 +107,6 @@ const nickName = ref('');
 const loading = ref(false);
 const showPhoneLogin = ref(false);
 const isRegister = ref(false);
-const wechatCode = ref('');
-
-// 后端API地址
-const API_BASE_URL = currentConfig.API_BASE_URL;
 
 const loginByPhone = () => {
   // 表单验证
@@ -127,27 +122,27 @@ const loginByPhone = () => {
   
   loading.value = true;
   
-  // 调用后端登录API
-  uni.request({
-    url: `${API_BASE_URL}/auth/phone`,
-    method: 'POST',
+  // 调用云函数密码登录
+  uniCloud.callFunction({
+    name: 'user',
     data: {
+      action: 'passwordLogin',
       phone: phone.value,
       password: password.value
     },
     success: (res) => {
-      if (res.data.code === 200) {
+      if (res.result.code === 200) {
         // 登录成功
-        const userInfo = res.data.data.user;
+        const userInfo = res.result.data;
         uni.setStorageSync('userInfo', userInfo);
-        uni.setStorageSync('token', res.data.data.token);
+        uni.setStorageSync('token', 'uniCloud_token'); // 简化处理，使用固定token
         uni.showToast({ title: '登录成功', icon: 'success' });
         setTimeout(() => {
           uni.reLaunch({ url: '/pages/index/index' });
         }, 1000);
       } else {
         // 登录失败
-        uni.showToast({ title: res.data.message || '登录失败', icon: 'none' });
+        uni.showToast({ title: res.result.message || '登录失败', icon: 'none' });
       }
     },
     fail: (err) => {
@@ -169,72 +164,61 @@ const handlePhoneAuth = () => {
 };
 
 const registerByPhone = () => {
-  // 先进行微信登录验证
-  uni.login({
-    provider: 'weixin',
-    success: function (loginRes) {
-      wechatCode.value = loginRes.code;
-      
-      // 表单验证
-      if (!phone.value || phone.value.length !== 11) {
-        uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
-        return;
-      }
-      
-      if (!password.value || password.value.length < 6) {
-        uni.showToast({ title: '密码长度至少6位', icon: 'none' });
-        return;
-      }
-      
-      if (!confirmPassword.value || password.value !== confirmPassword.value) {
-        uni.showToast({ title: '两次密码输入不一致', icon: 'none' });
-        return;
-      }
-      
-      if (!nickName.value || nickName.value.length < 2) {
-        uni.showToast({ title: '昵称长度至少2位', icon: 'none' });
-        return;
-      }
-      
-      loading.value = true;
-      
-      // 调用后端注册API
-      uni.request({
-        url: `${API_BASE_URL}/auth/register`,
-        method: 'POST',
-        data: {
-          phone: phone.value,
-          password: password.value,
-          confirmPassword: confirmPassword.value,
-          nickName: nickName.value,
-          wechatCode: wechatCode.value
-        },
-        success: (res) => {
-          if (res.data.code === 200) {
-            // 注册成功
-            const userInfo = res.data.data.user;
-            uni.setStorageSync('userInfo', userInfo);
-            uni.setStorageSync('token', res.data.data.token);
-            uni.showToast({ title: '注册成功', icon: 'success' });
-            setTimeout(() => {
-              uni.reLaunch({ url: '/pages/index/index' });
-            }, 1000);
-          } else {
-            // 注册失败
-            uni.showToast({ title: res.data.message || '注册失败', icon: 'none' });
-          }
-        },
-        fail: (err) => {
-          uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
-          console.error('注册失败:', err);
-        },
-        complete: () => {
-          loading.value = false;
-        }
-      });
+  // 表单验证
+  if (!phone.value || phone.value.length !== 11) {
+    uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
+    return;
+  }
+  
+  if (!password.value || password.value.length < 6) {
+    uni.showToast({ title: '密码长度至少6位', icon: 'none' });
+    return;
+  }
+  
+  if (!confirmPassword.value || password.value !== confirmPassword.value) {
+    uni.showToast({ title: '两次密码输入不一致', icon: 'none' });
+    return;
+  }
+  
+  if (!nickName.value || nickName.value.length < 2) {
+    uni.showToast({ title: '昵称长度至少2位', icon: 'none' });
+    return;
+  }
+  
+  loading.value = true;
+  
+  // 调用云函数注册
+  uniCloud.callFunction({
+    name: 'user',
+    data: {
+      action: 'login',
+      uid: 'phone_' + phone.value,
+      nickName: nickName.value,
+      avatarUrl: 'https://img.yzcdn.cn/vant/logo.png',
+      password: password.value,
+      phone: phone.value
     },
-    fail: function () {
-      uni.showToast({ title: '微信登录失败，请先进行微信登录', icon: 'none' });
+    success: (res) => {
+      if (res.result.code === 200) {
+        // 注册成功
+        const userInfo = res.result.data;
+        uni.setStorageSync('userInfo', userInfo);
+        uni.setStorageSync('token', 'uniCloud_token'); // 简化处理，使用固定token
+        uni.showToast({ title: '注册成功', icon: 'success' });
+        setTimeout(() => {
+          uni.reLaunch({ url: '/pages/index/index' });
+        }, 1000);
+      } else {
+        // 注册失败
+        uni.showToast({ title: res.result.message || '注册失败', icon: 'none' });
+      }
+    },
+    fail: (err) => {
+      uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
+      console.error('注册失败:', err);
+    },
+    complete: () => {
+      loading.value = false;
     }
   });
 };
@@ -250,27 +234,28 @@ const loginByWechat = () => {
       uni.getUserInfo({
         provider: 'weixin',
         success: function (infoRes) {
-          // 调用后端微信登录API
-          uni.request({
-            url: `${API_BASE_URL}/auth/wechat`,
-            method: 'POST',
+          // 调用云函数微信登录
+          uniCloud.callFunction({
+            name: 'user',
             data: {
-              code: loginRes.code,
-              userInfo: infoRes.userInfo
+              action: 'login',
+              uid: 'wechat_' + loginRes.code,
+              nickName: infoRes.userInfo.nickName,
+              avatarUrl: infoRes.userInfo.avatarUrl
             },
             success: (res) => {
-              if (res.data.code === 200) {
+              if (res.result.code === 200) {
                 // 登录成功
-                const userInfo = res.data.data.user;
+                const userInfo = res.result.data;
                 uni.setStorageSync('userInfo', userInfo);
-                uni.setStorageSync('token', res.data.data.token);
+                uni.setStorageSync('token', 'uniCloud_token'); // 简化处理，使用固定token
                 uni.showToast({ title: '登录成功', icon: 'success' });
                 setTimeout(() => {
                   uni.reLaunch({ url: '/pages/index/index' });
                 }, 1000);
               } else {
                 // 登录失败
-                uni.showToast({ title: res.data.message || '登录失败', icon: 'none' });
+                uni.showToast({ title: res.result.message || '登录失败', icon: 'none' });
               }
             },
             fail: (err) => {

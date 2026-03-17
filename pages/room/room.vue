@@ -97,7 +97,6 @@
 
 <script setup>
 import { ref, onMounted, nextTick, onUnmounted } from 'vue';
-import io from 'socket.io-client';
 
 const roomId = ref('123456');
 const qrcodePopup = ref(false);
@@ -113,11 +112,8 @@ const scoreInputs = ref([]);
 const subtitles = ref([]);
 const subtitleList = ref(null);
 const isRoomCreator = ref(false);
-const socket = ref(null);
 
-// 后端API地址
-const API_BASE_URL = 'http://38.182.96.171:3000/api';
-const SOCKET_URL = 'http://38.182.96.171:3000';
+const userInfo = ref(uni.getStorageSync('userInfo'));
 
 const inviteFriends = () => {
   // 生成二维码
@@ -160,7 +156,7 @@ const startEditScore = (index) => {
 const handleScoreChange = (index) => {
   const score = parseInt(scoreInputs.value[index]);
   if (!isNaN(score) && score > 0) {
-    // 调用后端API更新分数
+    // 调用云函数更新分数
     updateScore(index, score);
   } else {
     // 取消编辑状态
@@ -178,36 +174,27 @@ const updateScore = (index, score) => {
   const fromUserId = players.value[0].userId;
   const toUserId = players.value[index].userId;
   
-  uni.request({
-    url: `${API_BASE_URL}/score/update`,
-    method: 'POST',
-    header: {
-      'Authorization': `Bearer ${token}`
-    },
+  // 调用云函数更新分数
+  uniCloud.callFunction({
+    name: 'score',
     data: {
+      action: 'updateScore',
       roomId: roomId.value,
       fromUserId: fromUserId,
       toUserId: toUserId,
       score: score
     },
     success: (res) => {
-      if (res.data.code === 200) {
+      if (res.result.code === 200) {
         // 更新本地分数
-        players.value[0].score = res.data.data.fromUser.score;
-        players.value[index].score = res.data.data.toUser.score;
+        players.value[0].score = res.result.data.fromUser.score;
+        players.value[index].score = res.result.data.toUser.score;
         // 添加实时字幕
         addSubtitle(`玩家 ${players.value[0].name} 输给 ${players.value[index].name} ${score} 分`);
-        // 通过Socket.io广播分数更新
-        if (socket.value) {
-          socket.value.emit('score-updated', {
-            roomId: roomId.value,
-            fromUserId: fromUserId,
-            toUserId: toUserId,
-            score: score
-          });
-        }
+        // 立即刷新房间信息，确保所有玩家看到最新分数
+        getRoomInfo();
       } else {
-        uni.showToast({ title: res.data.message || '分数更新失败', icon: 'none' });
+        uni.showToast({ title: res.result.message || '分数更新失败', icon: 'none' });
       }
     },
     fail: (err) => {
@@ -230,7 +217,7 @@ const addSubtitle = (content, type = 'system') => {
   
   // 新消息添加到开头
   subtitles.value.unshift({
-    avatar: 'https://img.yzcdn.cn/vant/logo.png',
+    avatar: type === 'system' ? 'https://img.yzcdn.cn/vant/logo.png' : players.value[0].avatar,
     content: content,
     time: time,
     type: type
@@ -252,35 +239,22 @@ const sendMessage = () => {
       return;
     }
     
-    // 调用后端API发送消息
-    uni.request({
-      url: `${API_BASE_URL}/message/send`,
-      method: 'POST',
-      header: {
-        'Authorization': `Bearer ${token}`
-      },
+    // 调用云函数发送消息
+    uniCloud.callFunction({
+      name: 'message',
       data: {
+        action: 'sendMessage',
         roomId: roomId.value,
         content: message.value,
-        type: 'user'
+        type: 'user',
+        uid: userInfo.value.uid
       },
       success: (res) => {
-        if (res.data.code === 200) {
-          const msg = {
-            userId: players.value[0].name,
-            content: message.value
-          };
+        if (res.result.code === 200) {
           addSubtitle(`[${players.value[0].name}] ${message.value}`, 'user');
           message.value = '';
-          // 通过Socket.io广播消息
-          if (socket.value) {
-            socket.value.emit('new-message', {
-              roomId: roomId.value,
-              message: msg
-            });
-          }
         } else {
-          uni.showToast({ title: res.data.message || '消息发送失败', icon: 'none' });
+          uni.showToast({ title: res.result.message || '消息发送失败', icon: 'none' });
         }
       },
       fail: (err) => {
@@ -303,18 +277,16 @@ const closeRoom = () => {
           return;
         }
         
-        // 调用后端API关闭房间
-        uni.request({
-          url: `${API_BASE_URL}/room/close`,
-          method: 'POST',
-          header: {
-            'Authorization': `Bearer ${token}`
-          },
+        // 调用云函数关闭房间
+        uniCloud.callFunction({
+          name: 'room',
           data: {
-            roomId: roomId.value
+            action: 'closeRoom',
+            roomId: roomId.value,
+            uid: userInfo.value.uid
           },
           success: (res) => {
-            if (res.data.code === 200) {
+            if (res.result.code === 200) {
               addSubtitle('房间已关闭');
               // 延迟后返回主页
               setTimeout(() => {
@@ -323,7 +295,7 @@ const closeRoom = () => {
                 });
               }, 1000);
             } else {
-              uni.showToast({ title: res.data.message || '关闭房间失败', icon: 'none' });
+              uni.showToast({ title: res.result.message || '关闭房间失败', icon: 'none' });
             }
           },
           fail: (err) => {
@@ -348,18 +320,16 @@ const exitRoom = () => {
           return;
         }
         
-        // 调用后端API退出房间
-        uni.request({
-          url: `${API_BASE_URL}/room/exit`,
-          method: 'POST',
-          header: {
-            'Authorization': `Bearer ${token}`
-          },
+        // 调用云函数退出房间
+        uniCloud.callFunction({
+          name: 'room',
           data: {
-            roomId: roomId.value
+            action: 'exitRoom',
+            roomId: roomId.value,
+            uid: userInfo.value.uid
           },
           success: (res) => {
-            if (res.data.code === 200) {
+            if (res.result.code === 200) {
               addSubtitle('你已退出房间');
               // 延迟后返回主页
               setTimeout(() => {
@@ -368,7 +338,7 @@ const exitRoom = () => {
                 });
               }, 1000);
             } else {
-              uni.showToast({ title: res.data.message || '退出房间失败', icon: 'none' });
+              uni.showToast({ title: res.result.message || '退出房间失败', icon: 'none' });
             }
           },
           fail: (err) => {
@@ -390,24 +360,22 @@ const joinRoom = () => {
   
   uni.showLoading({ title: '加入房间中...' });
   
-  // 调用后端API加入房间
-  uni.request({
-    url: `${API_BASE_URL}/room/join`,
-    method: 'POST',
-    header: {
-      'Authorization': `Bearer ${token}`
-    },
+  // 调用云函数加入房间
+  uniCloud.callFunction({
+    name: 'room',
     data: {
-      roomId: roomId.value
+      action: 'joinRoom',
+      roomId: roomId.value,
+      uid: userInfo.value.uid
     },
     success: (res) => {
-      if (res.data.code === 200) {
+      if (res.result.code === 200) {
         // 更新玩家列表
-        players.value = res.data.data.players;
-        scoreInputs.value = new Array(res.data.data.players.length).fill('');
+        players.value = res.result.data.players;
+        scoreInputs.value = new Array(res.result.data.players.length).fill('');
         addSubtitle('你已加入房间');
       } else {
-        uni.showToast({ title: res.data.message || '加入房间失败', icon: 'none' });
+        uni.showToast({ title: res.result.message || '加入房间失败', icon: 'none' });
         // 延迟后返回主页
         setTimeout(() => {
           uni.navigateBack({
@@ -439,23 +407,20 @@ const getRoomInfo = () => {
     return;
   }
   
-  // 调用后端API获取房间信息
-  uni.request({
-    url: `${API_BASE_URL}/room/info`,
-    method: 'GET',
-    header: {
-      'Authorization': `Bearer ${token}`
-    },
+  // 调用云函数获取房间信息
+  uniCloud.callFunction({
+    name: 'room',
     data: {
+      action: 'getRoomInfo',
       roomId: roomId.value
     },
     success: (res) => {
-      if (res.data.code === 200) {
+      if (res.result.code === 200) {
         // 更新玩家列表
-        players.value = res.data.data.players;
-        scoreInputs.value = new Array(res.data.data.players.length).fill('');
+        players.value = res.result.data.players;
+        scoreInputs.value = new Array(res.result.data.players.length).fill('');
       } else {
-        uni.showToast({ title: res.data.message || '获取房间信息失败', icon: 'none' });
+        uni.showToast({ title: res.result.message || '获取房间信息失败', icon: 'none' });
       }
     },
     fail: (err) => {
@@ -464,53 +429,108 @@ const getRoomInfo = () => {
   });
 };
 
-const initSocket = () => {
-  // 初始化Socket.io连接
-  socket.value = io(SOCKET_URL, {
-    transports: ['websocket'],
-    autoConnect: true
+// 实时数据监听
+let messageListener = null;
+let scoreListener = null;
+let playerListener = null;
+let statusListener = null;
+
+// 开始实时监听
+const startRealtimeListeners = () => {
+  // 监听消息推送
+  messageListener = uniCloud.database().realtime.subscribe({
+    channel: `room_${roomId.value}_messages`,
+    callback: (res) => {
+      if (res.data) {
+        const message = res.data;
+        // 添加到消息列表
+        addSubtitle(message.content, message.type);
+      }
+    }
   });
   
-  // 连接成功
-  socket.value.on('connect', () => {
-    console.log('Socket连接成功:', socket.value.id);
-    // 加入房间
-    socket.value.emit('join-room', roomId.value);
+  // 监听分数更新
+  scoreListener = uniCloud.database().realtime.subscribe({
+    channel: `room_${roomId.value}_scores`,
+    callback: (res) => {
+      if (res.data) {
+        const scoreData = res.data;
+        // 更新本地分数
+        players.value.forEach(player => {
+          if (player.userId === scoreData.fromUser.userId) {
+            player.score = scoreData.fromUser.score;
+          }
+          if (player.userId === scoreData.toUser.userId) {
+            player.score = scoreData.toUser.score;
+          }
+        });
+        // 添加实时字幕
+        const fromPlayer = players.value.find(p => p.userId === scoreData.fromUserId);
+        const toPlayer = players.value.find(p => p.userId === scoreData.toUserId);
+        if (fromPlayer && toPlayer) {
+          addSubtitle(`玩家 ${fromPlayer.name} 输给 ${toPlayer.name} ${scoreData.score} 分`);
+        }
+      }
+    }
   });
   
-  // 玩家加入
-  socket.value.on('player-joined', (data) => {
-    console.log('玩家加入:', data);
-    addSubtitle('有新玩家加入房间');
-    // 刷新房间信息
-    getRoomInfo();
+  // 监听玩家变化
+  playerListener = uniCloud.database().realtime.subscribe({
+    channel: `room_${roomId.value}_players`,
+    callback: (res) => {
+      if (res.data) {
+        const playerData = res.data;
+        // 更新玩家列表
+        players.value = playerData.players;
+        scoreInputs.value = new Array(playerData.players.length).fill('');
+        // 添加系统消息
+        if (playerData.type === 'join') {
+          const newPlayer = playerData.players.find(p => p.userId === playerData.userId);
+          if (newPlayer) {
+            addSubtitle(`玩家 ${newPlayer.name} 加入了房间`);
+          }
+        } else if (playerData.type === 'exit') {
+          addSubtitle(`有玩家退出了房间`);
+        }
+      }
+    }
   });
   
-  // 玩家离开
-  socket.value.on('player-left', (data) => {
-    console.log('玩家离开:', data);
-    addSubtitle('有玩家离开房间');
-    // 刷新房间信息
-    getRoomInfo();
+  // 监听房间状态变化
+  statusListener = uniCloud.database().realtime.subscribe({
+    channel: `room_${roomId.value}_status`,
+    callback: (res) => {
+      if (res.data && res.data.type === 'close') {
+        addSubtitle('房间已关闭');
+        // 延迟后返回主页
+        setTimeout(() => {
+          uni.navigateBack({
+            delta: 1
+          });
+        }, 1000);
+      }
+    }
   });
-  
-  // 分数更新
-  socket.value.on('score-updated', (data) => {
-    console.log('分数更新:', data);
-    // 刷新房间信息
-    getRoomInfo();
-  });
-  
-  // 新消息
-  socket.value.on('new-message', (msg) => {
-    console.log('新消息:', msg);
-    addSubtitle(`[${msg.userId}] ${msg.content}`, 'user');
-  });
-  
-  // 连接断开
-  socket.value.on('disconnect', () => {
-    console.log('Socket连接断开');
-  });
+};
+
+// 停止实时监听
+const stopRealtimeListeners = () => {
+  if (messageListener) {
+    messageListener.close();
+    messageListener = null;
+  }
+  if (scoreListener) {
+    scoreListener.close();
+    scoreListener = null;
+  }
+  if (playerListener) {
+    playerListener.close();
+    playerListener = null;
+  }
+  if (statusListener) {
+    statusListener.close();
+    statusListener = null;
+  }
 };
 
 onMounted(() => {
@@ -531,16 +551,13 @@ onMounted(() => {
     joinRoom();
   }
   
-  // 初始化Socket.io连接
-  initSocket();
+  // 启动实时监听
+  startRealtimeListeners();
 });
 
 onUnmounted(() => {
-  // 离开房间
-  if (socket.value) {
-    socket.value.emit('leave-room', roomId.value);
-    socket.value.disconnect();
-  }
+  // 停止实时监听
+  stopRealtimeListeners();
 });
 </script>
 

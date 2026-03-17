@@ -124,7 +124,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { currentConfig } from '../../config/env';
 
 const userInfo = ref({
   nickName: '未登录',
@@ -149,9 +148,6 @@ const bindPhoneNumber = ref('');
 const bindPhonePassword = ref('');
 const bindPhoneConfirmPassword = ref('');
 
-// 后端API地址
-const API_BASE_URL = currentConfig.API_BASE_URL;
-
 const chooseAvatar = () => {
   uni.chooseImage({
     count: 1,
@@ -159,7 +155,7 @@ const chooseAvatar = () => {
     sourceType: ['album', 'camera'],
     success: (res) => {
       userInfo.value.avatarUrl = res.tempFilePaths[0];
-      // 调用后端更新用户信息
+      // 调用云函数更新用户信息
       updateUserInfo();
     }
   });
@@ -175,7 +171,7 @@ const editNickname = () => {
 const saveNickname = () => {
   if (newNickname.value) {
     userInfo.value.nickName = newNickname.value;
-    // 调用后端更新用户信息
+    // 调用云函数更新用户信息
     updateUserInfo();
     nicknamePopup.value = false;
   }
@@ -188,26 +184,27 @@ const updateUserInfo = () => {
     return;
   }
   
-  uni.request({
-    url: `${API_BASE_URL}/user/update`,
-    method: 'POST',
-    header: {
-      'Authorization': `Bearer ${token}`
-    },
+  // 调用云函数更新用户信息
+  uniCloud.callFunction({
+    name: 'user',
     data: {
+      action: 'updateUserInfo',
+      uid: userInfo.value.uid,
       nickName: userInfo.value.nickName,
       avatarUrl: userInfo.value.avatarUrl
     },
     success: (res) => {
-      if (res.data.code === 200) {
+      if (res.result.code === 200) {
         // 更新成功
         uni.setStorageSync('userInfo', userInfo.value);
+        uni.showToast({ title: '更新成功', icon: 'success' });
       } else {
         uni.showToast({ title: '更新失败', icon: 'none' });
       }
     },
     fail: (err) => {
       console.error('更新用户信息失败:', err);
+      uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
     }
   });
 };
@@ -221,21 +218,21 @@ const createRoom = () => {
   
   uni.showLoading({ title: '创建房间中...' });
   
-  // 调用后端创建房间API
-  uni.request({
-    url: `${API_BASE_URL}/room/create`,
-    method: 'POST',
-    header: {
-      'Authorization': `Bearer ${token}`
+  // 调用云函数创建房间
+  uniCloud.callFunction({
+    name: 'room',
+    data: {
+      action: 'createRoom',
+      uid: userInfo.value.uid
     },
     success: (res) => {
-      if (res.data.code === 200) {
-        const roomId = res.data.data.roomId;
+      if (res.result.code === 200) {
+        const roomId = res.result.data.roomId;
         uni.navigateTo({
           url: `/pages/room/room?roomId=${roomId}&isCreator=true`
         });
       } else {
-        uni.showToast({ title: res.data.message || '创建房间失败', icon: 'none' });
+        uni.showToast({ title: res.result.message || '创建房间失败', icon: 'none' });
       }
     },
     fail: (err) => {
@@ -279,19 +276,23 @@ const scanCode = () => {
 const loadStats = () => {
   const token = uni.getStorageSync('token');
   if (!token) {
+    uni.navigateTo({ url: '/pages/login/login' });
     return;
   }
   
-  // 调用后端获取统计数据
-  uni.request({
-    url: `${API_BASE_URL}/history/stats`,
-    method: 'GET',
-    header: {
-      'Authorization': `Bearer ${token}`
+  // 调用云函数获取用户统计数据
+  uniCloud.callFunction({
+    name: 'user',
+    data: {
+      action: 'getUserStats',
+      uid: userInfo.value.uid
     },
     success: (res) => {
-      if (res.data.code === 200) {
-        stats.value = res.data.data;
+      if (res.result.code === 200) {
+        // 更新统计数据
+        stats.value = res.result.data;
+      } else {
+        console.error('获取统计数据失败:', res.result.message);
       }
     },
     fail: (err) => {
@@ -307,31 +308,12 @@ const loadUserInfo = () => {
     return;
   }
   
-  // 调用后端获取用户信息
-  uni.request({
-    url: `${API_BASE_URL}/user/info`,
-    method: 'GET',
-    header: {
-      'Authorization': `Bearer ${token}`
-    },
-    success: (res) => {
-      if (res.data.code === 200) {
-        userInfo.value = {
-          uid: res.data.data.uid,
-          nickName: res.data.data.nickName,
-          avatarUrl: res.data.data.avatarUrl,
-          phone: res.data.data.phone
-        };
-        uni.setStorageSync('userInfo', userInfo.value);
-      } else {
-        uni.navigateTo({ url: '/pages/login/login' });
-      }
-    },
-    fail: (err) => {
-      console.error('获取用户信息失败:', err);
-      uni.navigateTo({ url: '/pages/login/login' });
-    }
-  });
+  const storedUserInfo = uni.getStorageSync('userInfo');
+  if (storedUserInfo) {
+    userInfo.value = storedUserInfo;
+  } else {
+    uni.navigateTo({ url: '/pages/login/login' });
+  }
 };
 
 const bindPhone = () => {
@@ -354,41 +336,35 @@ const saveBindPhone = () => {
     return;
   }
   
-  // 先进行微信登录验证
-  uni.login({
-    provider: 'weixin',
-    success: function (loginRes) {
-      const wechatCode = loginRes.code;
-      
-      uni.request({
-        url: `${API_BASE_URL}/auth/bind-phone`,
-        method: 'POST',
-        header: {
-          'Authorization': `Bearer ${uni.getStorageSync('token')}`
-        },
-        data: {
-          wechatCode,
-          phone: bindPhoneNumber.value,
-          password: bindPhonePassword.value
-        },
-        success: (res) => {
-          if (res.data.code === 200) {
-            uni.showToast({ title: '手机号绑定成功', icon: 'success' });
-            userInfo.value.phone = bindPhoneNumber.value;
-            uni.setStorageSync('userInfo', userInfo.value);
-            bindPhonePopup.value = false;
-          } else {
-            uni.showToast({ title: res.data.message || '绑定失败', icon: 'none' });
-          }
-        },
-        fail: (err) => {
-          console.error('绑定手机号失败:', err);
-          uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
-        }
-      });
+  const token = uni.getStorageSync('token');
+  if (!token) {
+    uni.navigateTo({ url: '/pages/login/login' });
+    return;
+  }
+  
+  // 调用云函数更新用户信息
+  uniCloud.callFunction({
+    name: 'user',
+    data: {
+      action: 'updateUserInfo',
+      uid: userInfo.value.uid,
+      phone: bindPhoneNumber.value,
+      password: bindPhonePassword.value
     },
-    fail: function () {
-      uni.showToast({ title: '微信登录失败', icon: 'none' });
+    success: (res) => {
+      if (res.result.code === 200) {
+        // 更新成功
+        userInfo.value.phone = bindPhoneNumber.value;
+        uni.setStorageSync('userInfo', userInfo.value);
+        uni.showToast({ title: '手机号绑定成功', icon: 'success' });
+        bindPhonePopup.value = false;
+      } else {
+        uni.showToast({ title: '绑定失败', icon: 'none' });
+      }
+    },
+    fail: (err) => {
+      console.error('绑定手机号失败:', err);
+      uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
     }
   });
 };
@@ -399,33 +375,13 @@ const logout = () => {
     content: '确定要退出登录吗？',
     success: (res) => {
       if (res.confirm) {
-        // 调用后端退出API
-        uni.request({
-          url: `${API_BASE_URL}/auth/logout`,
-          method: 'POST',
-          header: {
-            'Authorization': `Bearer ${uni.getStorageSync('token')}`
-          },
-          success: (res) => {
-            // 清除本地存储
-            uni.removeStorageSync('userInfo');
-            uni.removeStorageSync('token');
-            uni.showToast({ title: '退出成功', icon: 'success' });
-            setTimeout(() => {
-              uni.reLaunch({ url: '/pages/login/login' });
-            }, 1000);
-          },
-          fail: (err) => {
-            console.error('退出失败:', err);
-            // 即使后端失败，也清除本地存储
-            uni.removeStorageSync('userInfo');
-            uni.removeStorageSync('token');
-            uni.showToast({ title: '退出成功', icon: 'success' });
-            setTimeout(() => {
-              uni.reLaunch({ url: '/pages/login/login' });
-            }, 1000);
-          }
-        });
+        // 清除本地存储
+        uni.removeStorageSync('userInfo');
+        uni.removeStorageSync('token');
+        uni.showToast({ title: '退出成功', icon: 'success' });
+        setTimeout(() => {
+          uni.reLaunch({ url: '/pages/login/login' });
+        }, 1000);
       }
     }
   });

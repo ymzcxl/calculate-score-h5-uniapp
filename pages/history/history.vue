@@ -87,45 +87,19 @@ const stats = ref({
 const historyRecords = ref([]);
 const currentYear = ref(new Date().getFullYear());
 
-// 后端API地址
-const API_BASE_URL = 'http://38.182.96.171:3000/api';
-
 const clearHistory = () => {
   uni.showModal({
     title: '确认清空',
     content: '确定要清空所有历史记录吗？',
     success: (res) => {
       if (res.confirm) {
-        const token = uni.getStorageSync('token');
-        if (!token) {
-          uni.navigateTo({ url: '/pages/login/login' });
-          return;
-        }
-        
-        // 调用后端API清空历史记录
-        uni.request({
-          url: `${API_BASE_URL}/history/clear`,
-          method: 'POST',
-          header: {
-            'Authorization': `Bearer ${token}`
-          },
-          success: (res) => {
-            if (res.data.code === 200) {
-              historyRecords.value = [];
-              uni.showToast({
-                title: '历史记录已清空',
-                icon: 'success'
-              });
-              loadStats();
-            } else {
-              uni.showToast({ title: res.data.message || '清空失败', icon: 'none' });
-            }
-          },
-          fail: (err) => {
-            console.error('清空历史记录失败:', err);
-            uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
-          }
+        // 简化处理，直接清空本地数据
+        historyRecords.value = [];
+        uni.showToast({
+          title: '历史记录已清空',
+          icon: 'success'
         });
+        loadStats();
       }
     }
   });
@@ -144,23 +118,39 @@ const loadHistoryRecords = () => {
     return;
   }
   
-  // 调用后端API获取历史记录
-  uni.request({
-    url: `${API_BASE_URL}/history/list`,
-    method: 'GET',
-    header: {
-      'Authorization': `Bearer ${token}`
+  // 调用云函数获取分数历史
+  uniCloud.callFunction({
+    name: 'score',
+    data: {
+      action: 'getScoreHistory',
+      roomId: '' // 空字符串表示获取所有历史记录
     },
     success: (res) => {
-      if (res.data.code === 200) {
-        historyRecords.value = res.data.data;
+      if (res.result.code === 200) {
+        // 转换历史记录格式
+        const historyData = res.result.data.map(item => {
+          const result = item.toUserId === userInfo.value.uid ? 'win' : item.fromUserId === userInfo.value.uid ? 'lose' : 'draw';
+          const score = item.toUserId === userInfo.value.uid ? item.score : item.fromUserId === userInfo.value.uid ? -item.score : 0;
+          
+          // 格式化时间
+          const date = new Date(item.timestamp);
+          const time = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          
+          return {
+            result,
+            time,
+            opponents: [], // 这里需要从玩家表中获取对手信息，暂时留空
+            score
+          };
+        });
+        
+        historyRecords.value = historyData;
       } else {
-        uni.showToast({ title: res.data.message || '获取历史记录失败', icon: 'none' });
+        console.error('获取历史记录失败:', res.result.message);
       }
     },
     fail: (err) => {
       console.error('获取历史记录失败:', err);
-      uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
     }
   });
 };
@@ -168,24 +158,23 @@ const loadHistoryRecords = () => {
 const loadStats = () => {
   const token = uni.getStorageSync('token');
   if (!token) {
+    uni.navigateTo({ url: '/pages/login/login' });
     return;
   }
   
-  // 调用后端API获取统计数据
-  uni.request({
-    url: `${API_BASE_URL}/history/stats`,
-    method: 'GET',
-    header: {
-      'Authorization': `Bearer ${token}`
+  // 调用云函数获取用户统计数据
+  uniCloud.callFunction({
+    name: 'user',
+    data: {
+      action: 'getUserStats',
+      uid: userInfo.value.uid
     },
     success: (res) => {
-      if (res.data.code === 200) {
-        stats.value = {
-          totalGames: res.data.data.totalGames,
-          winGames: res.data.data.winGames,
-          winRate: res.data.data.winRate,
-          totalScore: res.data.data.totalScore
-        };
+      if (res.result.code === 200) {
+        // 更新统计数据
+        stats.value = res.result.data;
+      } else {
+        console.error('获取统计数据失败:', res.result.message);
       }
     },
     fail: (err) => {
