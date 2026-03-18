@@ -2,14 +2,14 @@
   <view class="login-container">
     <!-- 背景图 -->
     <view class="login-bg">
-      <image src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=casino%20poker%20game%20background%20with%20cards%20and%20chips%2C%20blurred%2C%20colorful%2C%20casual%20style&image_size=landscape_16_9" mode="aspectFill" class="bg-image"></image>
+      <view class="bg-gradient"></view>
     </view>
     
     <!-- 登录选择弹窗 -->
     <view class="login-popup">
       <view class="popup-content">
         <view class="popup-header">
-          <image src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=poker%20game%20logo%2C%20simple%20modern%20design%2C%20colorful%20cards%20icon&image_size=square" mode="aspectFit" class="popup-logo"></image>
+          <view class="popup-logo">🃏</view>
           <view class="popup-title">打牌算分</view>
           <view class="popup-desc">轻松计分，快乐打牌</view>
         </view>
@@ -26,6 +26,17 @@
             <view class="option-icon phone-icon">📱</view>
             <view class="option-text">手机号登录</view>
           </button>
+          
+          <!-- 测试账号登录 -->
+          <view class="test-accounts">
+            <view class="test-title">测试账号</view>
+            <button @click="loginTestAccount('test1')" class="login-option test">
+              <view class="option-text">测试账号 1</view>
+            </button>
+            <button @click="loginTestAccount('test2')" class="login-option test">
+              <view class="option-text">测试账号 2</view>
+            </button>
+          </view>
         </view>
       </view>
     </view>
@@ -284,6 +295,59 @@ const goToForgotPassword = () => {
   uni.navigateTo({ url: '/pages/login/forgot-password' });
 };
 
+const loginTestAccount = (accountType) => {
+  loading.value = true;
+  
+  // 测试账号信息
+  const testAccounts = {
+    test1: {
+      uid: 'test_1',
+      nickName: '测试账号1',
+      avatarUrl: 'https://img.yzcdn.cn/vant/logo.png',
+      phone: '13800138001'
+    },
+    test2: {
+      uid: 'test_2',
+      nickName: '测试账号2',
+      avatarUrl: 'https://img.yzcdn.cn/vant/logo.png',
+      phone: '13800138002'
+    }
+  };
+  
+  const testAccount = testAccounts[accountType];
+  
+  // 调用云函数登录/注册测试账号
+  uniCloud.callFunction({
+    name: 'user',
+    data: {
+      action: 'login',
+      ...testAccount
+    },
+    success: (res) => {
+      if (res.result.code === 200) {
+        // 登录成功
+        const userInfo = res.result.data;
+        uni.setStorageSync('userInfo', userInfo);
+        uni.setStorageSync('token', 'test_token');
+        uni.showToast({ title: '测试账号登录成功', icon: 'success' });
+        setTimeout(() => {
+          uni.reLaunch({ url: '/pages/index/index' });
+        }, 1000);
+      } else {
+        // 登录失败
+        uni.showToast({ title: res.result.message || '登录失败', icon: 'none' });
+      }
+    },
+    fail: (err) => {
+      uni.showToast({ title: '网络错误，请稍后重试', icon: 'none' });
+      console.error('登录失败:', err);
+    },
+    complete: () => {
+      loading.value = false;
+    }
+  });
+};
+
 onMounted(() => {
   // 检查是否已登录
   const userInfo = uni.getStorageSync('userInfo');
@@ -309,10 +373,10 @@ onMounted(() => {
   z-index: 0;
 }
 
-.bg-image {
+.bg-gradient {
   width: 100%;
   height: 100%;
-  filter: blur(20rpx);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
 }
 
 .login-popup {
@@ -334,9 +398,12 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 32rpx;
   padding: 60rpx 40rpx;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20rpx 60rpx rgba(74, 144, 226, 0.2);
   backdrop-filter: blur(10rpx);
   animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 @keyframes slideUp {
@@ -362,8 +429,14 @@ onMounted(() => {
   height: 140rpx;
   margin-bottom: 30rpx;
   border-radius: 28rpx;
-  box-shadow: 0 10rpx 30rpx rgba(79, 172, 254, 0.3);
+  box-shadow: 0 10rpx 30rpx rgba(74, 144, 226, 0.3);
   animation: pulse 2s infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80rpx;
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
+  color: white;
 }
 
 @keyframes pulse {
@@ -393,6 +466,26 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+  width: 100%;
+}
+
+.test-accounts {
+  margin-top: 40rpx;
+  width: 100%;
+}
+
+.test-title {
+  font-size: 24rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 16rpx;
+  font-weight: 600;
+}
+
+.login-option.test {
+  background: linear-gradient(135deg, #9013FE 0%, #B388EB 100%);
+  color: #fff;
+  margin-bottom: 16rpx;
 }
 
 .login-option {
@@ -407,7 +500,8 @@ onMounted(() => {
   transition: all 0.3s ease;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   min-height: 120rpx;
-  width: 300rpx;
+  width: 360rpx;
+  margin: 0 auto;
 }
 
 .login-option.wechat {
@@ -416,7 +510,7 @@ onMounted(() => {
 }
 
 .login-option.phone {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
 }
 
@@ -550,9 +644,9 @@ onMounted(() => {
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   border: none;
-  box-shadow: 0 10rpx 30rpx rgba(79, 172, 254, 0.3);
+  box-shadow: 0 10rpx 30rpx rgba(74, 144, 226, 0.3);
   transition: all 0.3s ease;
   color: #fff;
   margin-top: 20rpx;
@@ -560,7 +654,7 @@ onMounted(() => {
 
 .login-button:hover {
   transform: translateY(-4rpx);
-  box-shadow: 0 15rpx 40rpx rgba(79, 172, 254, 0.4);
+  box-shadow: 0 15rpx 40rpx rgba(74, 144, 226, 0.4);
 }
 
 .switch-mode {

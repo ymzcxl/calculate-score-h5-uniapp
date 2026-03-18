@@ -14,15 +14,49 @@
 
 /* 颜色变量 */
 
-/* 年轻人活力风格色彩方案 */
-$uni-color-primary: #ff6b6b;
-$uni-color-primary-light: #ff8787;
-$uni-color-secondary: #4ecdc4;
-$uni-color-secondary-light: #7ed9c9;
-$uni-color-success: #45b7d1;
-$uni-color-warning: #ffbe0b;
-$uni-color-error: #fb5607;
-$uni-color-info: #8338ec;
+/* 主题配置 */
+// 默认浅蓝色主题
+$theme-default: (
+  primary: #4A90E2,
+  primary-light: #6AA9F4,
+  primary-dark: #357ABD,
+  secondary: #50E3C2,
+  secondary-light: #78F0D8,
+  secondary-dark: #38C4A3,
+  success: #7ED321,
+  warning: #F5A623,
+  error: #D0021B,
+  info: #9013FE
+);
+
+// 过年红色主题
+$theme-chinese-new-year: (
+  primary: #E74C3C,
+  primary-light: #EC7063,
+  primary-dark: #C0392B,
+  secondary: #F39C12,
+  secondary-light: #F8C471,
+  secondary-dark: #D35400,
+  success: #27AE60,
+  warning: #F1C40F,
+  error: #E74C3C,
+  info: #9B59B6
+);
+
+// 当前使用的主题
+$current-theme: $theme-default;
+
+/* 颜色变量 - 从主题中获取 */
+$uni-color-primary: map-get($current-theme, primary);
+$uni-color-primary-light: map-get($current-theme, primary-light);
+$uni-color-primary-dark: map-get($current-theme, primary-dark);
+$uni-color-secondary: map-get($current-theme, secondary);
+$uni-color-secondary-light: map-get($current-theme, secondary-light);
+$uni-color-secondary-dark: map-get($current-theme, secondary-dark);
+$uni-color-success: map-get($current-theme, success);
+$uni-color-warning: map-get($current-theme, warning);
+$uni-color-error: map-get($current-theme, error);
+$uni-color-info: map-get($current-theme, info);
 
 /* 文字基本颜色 */
 $uni-text-color: #1f2937;//基本色
@@ -36,9 +70,9 @@ $uni-bg-color: #ffffff;
 $uni-bg-color-grey: #f8f9fa;
 $uni-bg-color-hover: #e9ecef;//点击状态颜色
 $uni-bg-color-mask: rgba(0, 0, 0, 0.5);//遮罩颜色
-$uni-bg-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-$uni-bg-gradient-primary: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-$uni-bg-gradient-secondary: linear-gradient(135deg, #4ecdc4 0%, #45b7d1 100%);
+$uni-bg-gradient: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+$uni-bg-gradient-primary: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+$uni-bg-gradient-secondary: linear-gradient(135deg, #50E3C2 0%, #38C4A3 100%);
 
 /* 边框颜色 */
 $uni-border-color: #e5e7eb;
@@ -49,7 +83,7 @@ $uni-border-color-dark: #d1d5db;
 $u-border-color: $uni-border-color;
 $u-primary: $uni-color-primary;
 $u-primary-light: $uni-color-primary-light;
-$u-primary-dark: darken($uni-color-primary, 10%);
+$u-primary-dark: $uni-color-primary-dark;
 $u-primary-disabled: rgba($uni-color-primary, 0.5);
 $u-success: $uni-color-success;
 $u-success-light: rgba($uni-color-success, 0.1);
@@ -67,6 +101,10 @@ $u-info: $uni-color-info;
 $u-info-light: rgba($uni-color-info, 0.1);
 $u-info-dark: darken($uni-color-info, 10%);
 $u-info-disabled: rgba($uni-color-info, 0.5);
+$u-main-color: $uni-text-color;
+$u-content-color: $uni-text-color-grey;
+$u-tips-color: $uni-text-color-placeholder;
+$u-light-color: $uni-bg-color-grey;
 
 /* 阴影 */
 $uni-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);

@@ -403,7 +403,7 @@ onMounted(() => {
 <style scoped>
 .index-container {
   padding: 20rpx;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -417,7 +417,7 @@ onMounted(() => {
   padding: 40rpx;
   width: 100%;
   max-width: 700rpx;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20rpx 60rpx rgba(74, 144, 226, 0.1);
   animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.3s ease;
   position: relative;
@@ -431,7 +431,7 @@ onMounted(() => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+  background: linear-gradient(45deg, transparent, rgba(74, 144, 226, 0.1), transparent);
   transform: rotate(45deg);
   animation: shine 3s infinite;
 }
@@ -611,15 +611,15 @@ onMounted(() => {
 .trophy-icon,
 .trend-icon {
   font-size: 32rpx;
-  color: #4facfe;
+  color: #4A90E2;
 }
 
 .trophy-icon {
-  color: #10b981;
+  color: #7ED321;
 }
 
 .trend-icon {
-  color: #f59e0b;
+  color: #F5A623;
 }
 
 .stat-value {
@@ -677,7 +677,7 @@ onMounted(() => {
   border: none;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   color: #fff;
-  background: #4facfe;
+  background: #4A90E2;
 }
 
 .scan-icon,
@@ -690,8 +690,8 @@ onMounted(() => {
 }
 
 .action-button.primary {
-  background: #4facfe;
-  box-shadow: 0 12rpx 32rpx rgba(79, 172, 254, 0.3);
+  background: #4A90E2;
+  box-shadow: 0 12rpx 32rpx rgba(74, 144, 226, 0.3);
 }
 
 .action-button.secondary {
@@ -700,13 +700,13 @@ onMounted(() => {
 }
 
 .action-button.secondary.scan {
-  background: #ff6b6b;
-  box-shadow: 0 12rpx 32rpx rgba(255, 107, 107, 0.3);
+  background: #D0021B;
+  box-shadow: 0 12rpx 32rpx rgba(208, 2, 27, 0.3);
 }
 
 .action-button.secondary.history {
-  background: #8338ec;
-  box-shadow: 0 12rpx 32rpx rgba(131, 56, 236, 0.3);
+  background: #9013FE;
+  box-shadow: 0 12rpx 32rpx rgba(144, 19, 254, 0.3);
 }
 
 .action-button:hover {
@@ -740,7 +740,7 @@ onMounted(() => {
 
 .chart-icon {
   font-size: 28rpx;
-  color: #4facfe;
+  color: #4A90E2;
   margin-right: 12rpx;
 }
 
@@ -776,7 +776,7 @@ onMounted(() => {
 .stat-number {
   font-size: 40rpx;
   font-weight: 700;
-  color: #4facfe;
+  color: #4A90E2;
   margin-bottom: 8rpx;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -818,8 +818,8 @@ onMounted(() => {
 }
 
 .popup-input:focus {
-  border-color: #4facfe;
-  box-shadow: 0 0 0 3rpx rgba(79, 172, 254, 0.1);
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3rpx rgba(74, 144, 226, 0.1);
 }
 
 .popup-buttons {
@@ -848,7 +848,7 @@ onMounted(() => {
 }
 
 .popup-button.confirm {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
 }
 

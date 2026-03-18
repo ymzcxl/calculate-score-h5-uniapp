@@ -566,7 +566,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   position: relative;
   overflow: hidden;
 }
@@ -654,13 +654,13 @@ onUnmounted(() => {
   background-color: #f8f9fa;
   transform: translateY(-4rpx) scale(1.02);
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  border-color: #4facfe;
+  border-color: #4A90E2;
 }
 
 .player-item.current-player {
-  border-color: #4facfe;
-  box-shadow: 0 0 0 3rpx rgba(79, 172, 254, 0.1);
-  background-color: rgba(79, 172, 254, 0.05);
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3rpx rgba(74, 144, 226, 0.1);
+  background-color: rgba(74, 144, 226, 0.05);
   animation: pulse 1.5s infinite;
 }
 
@@ -676,7 +676,7 @@ onUnmounted(() => {
 
 .player-item:hover .player-avatar {
   transform: scale(1.1);
-  border-color: #4facfe;
+  border-color: #4A90E2;
 }
 
 .player-info {
@@ -695,7 +695,7 @@ onUnmounted(() => {
 }
 
 .player-name:hover {
-  color: #4facfe;
+  color: #4A90E2;
   text-decoration: underline;
 }
 
@@ -703,13 +703,13 @@ onUnmounted(() => {
   position: absolute;
   top: -8rpx;
   right: -40rpx;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
   font-size: 16rpx;
   padding: 4rpx 12rpx;
   border-radius: 50rpx;
   font-weight: 600;
-  box-shadow: 0 2rpx 8rpx rgba(79, 172, 254, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(74, 144, 226, 0.3);
 }
 
 .player-score-container {
@@ -730,9 +730,9 @@ onUnmounted(() => {
 }
 
 .player-score:hover {
-  background-color: rgba(79, 172, 254, 0.1);
+  background-color: rgba(74, 144, 226, 0.1);
   transform: scale(1.1);
-  box-shadow: 0 4rpx 12rpx rgba(79, 172, 254, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(74, 144, 226, 0.2);
 }
 
 .star-icon {
@@ -755,7 +755,7 @@ onUnmounted(() => {
   border-radius: 16rpx;
   padding: 16rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  border: 2rpx solid #4facfe;
+  border: 2rpx solid #4A90E2;
   animation: pulse 0.5s ease-in-out;
 }
 
@@ -797,8 +797,8 @@ onUnmounted(() => {
 }
 
 .add-player:hover {
-  border-color: #4facfe;
-  background-color: rgba(79, 172, 254, 0.1);
+  border-color: #4A90E2;
+  background-color: rgba(74, 144, 226, 0.1);
   transform: translateY(-4rpx);
 }
 
@@ -817,7 +817,7 @@ onUnmounted(() => {
 
 .plus-icon {
   font-size: 40rpx;
-  color: #4facfe;
+  color: #4A90E2;
   font-weight: bold;
 }
 
@@ -894,7 +894,7 @@ onUnmounted(() => {
 }
 
 .action-button.close {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
 }
 
@@ -951,8 +951,8 @@ onUnmounted(() => {
 
 .message-item.system-message {
   align-self: center;
-  background-color: rgba(79, 172, 254, 0.1);
-  border: 1rpx solid rgba(79, 172, 254, 0.3);
+  background-color: rgba(74, 144, 226, 0.1);
+  border: 1rpx solid rgba(74, 144, 226, 0.3);
   max-width: 80%;
   animation: messageSlideIn 0.3s ease-out 0.2s;
 }
@@ -981,7 +981,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 2rpx;
-  background: linear-gradient(90deg, transparent, #4facfe, transparent);
+  background: linear-gradient(90deg, transparent, #4A90E2, transparent);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -1042,8 +1042,8 @@ onUnmounted(() => {
 }
 
 .message-input:focus {
-  border-color: #4facfe;
-  box-shadow: 0 0 0 3rpx rgba(79, 172, 254, 0.1);
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3rpx rgba(74, 144, 226, 0.1);
 }
 
 .send-button {
@@ -1051,7 +1051,7 @@ onUnmounted(() => {
   height: 56rpx;
   border-radius: 50%;
   background-color: #fff;
-  border: 2rpx solid #4facfe;
+  border: 2rpx solid #4A90E2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1062,15 +1062,15 @@ onUnmounted(() => {
 
 .send-icon {
   font-size: 28rpx;
-  color: #4facfe;
+  color: #4A90E2;
   font-weight: bold;
 }
 
 .send-button:hover {
-  background-color: #4facfe;
+  background-color: #4A90E2;
   color: #fff;
   transform: scale(1.1);
-  box-shadow: 0 4rpx 12rpx rgba(79, 172, 254, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(74, 144, 226, 0.3);
 }
 
 .send-button:hover .send-icon {
@@ -1172,8 +1172,8 @@ onUnmounted(() => {
 }
 
 .popup-input:focus {
-  border-color: #4facfe;
-  box-shadow: 0 0 0 3rpx rgba(79, 172, 254, 0.1);
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3rpx rgba(74, 144, 226, 0.1);
 }
 
 .popup-buttons {
@@ -1202,7 +1202,7 @@ onUnmounted(() => {
 }
 
 .popup-button.confirm {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
 }
 

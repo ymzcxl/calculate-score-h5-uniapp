@@ -199,7 +199,7 @@ onMounted(() => {
 <style scoped>
 .history-container {
   padding: 20rpx;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -213,7 +213,7 @@ onMounted(() => {
   padding: 40rpx;
   width: 100%;
   max-width: 700rpx;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20rpx 60rpx rgba(74, 144, 226, 0.1);
   animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.3s ease;
   position: relative;
@@ -227,7 +227,7 @@ onMounted(() => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+  background: linear-gradient(45deg, transparent, rgba(74, 144, 226, 0.1), transparent);
   transform: rotate(45deg);
   animation: shine 3s infinite;
 }
@@ -304,12 +304,12 @@ onMounted(() => {
 .total-score {
   font-size: 28rpx;
   font-weight: 600;
-  color: #4facfe;
+  color: #4A90E2;
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
-  background-color: rgba(79, 172, 254, 0.1);
+  background-color: rgba(74, 144, 226, 0.1);
   padding: 8rpx 16rpx;
   border-radius: 50rpx;
-  box-shadow: 0 2rpx 8rpx rgba(79, 172, 254, 0.2);
+  box-shadow: 0 2rpx 8rpx rgba(74, 144, 226, 0.2);
 }
 
 .stats {
@@ -484,7 +484,7 @@ onMounted(() => {
 .record-item:hover {
   transform: translateX(10rpx) translateY(-2rpx);
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  border-color: #4facfe;
+  border-color: #4A90E2;
 }
 
 .record-item.record-result-win:hover {
@@ -619,7 +619,7 @@ onMounted(() => {
 }
 
 .empty-button {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4A90E2 0%, #6AA9F4 100%);
   color: #fff;
   border: none;
   border-radius: 50rpx;
@@ -627,12 +627,12 @@ onMounted(() => {
   font-size: 22rpx;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 10rpx 30rpx rgba(79, 172, 254, 0.3);
+  box-shadow: 0 10rpx 30rpx rgba(74, 144, 226, 0.3);
   font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .empty-button:hover {
   transform: translateY(-4rpx);
-  box-shadow: 0 15rpx 40rpx rgba(79, 172, 254, 0.4);
+  box-shadow: 0 15rpx 40rpx rgba(74, 144, 226, 0.4);
 }
 </style>

@@ -13,36 +13,9 @@
 </script>
 
 <style lang="scss">
-	/* uview-plus 必要变量定义 */
-	$u-border-color: #e5e7eb;
-	$u-primary: #4facfe;
-	$u-primary-light: #00f2fe;
-	$u-primary-dark: #3a86ff;
-	$u-primary-disabled: rgba(#4facfe, 0.5);
-	$u-success: #10b981;
-	$u-success-light: rgba(#10b981, 0.1);
-	$u-success-dark: #059669;
-	$u-success-disabled: rgba(#10b981, 0.5);
-	$u-warning: #f59e0b;
-	$u-warning-light: rgba(#f59e0b, 0.1);
-	$u-warning-dark: #d97706;
-	$u-warning-disabled: rgba(#f59e0b, 0.5);
-	$u-error: #ef4444;
-	$u-error-light: rgba(#ef4444, 0.1);
-	$u-error-dark: #dc2626;
-	$u-error-disabled: rgba(#ef4444, 0.5);
-	$u-info: #3b82f6;
-	$u-info-light: rgba(#3b82f6, 0.1);
-	$u-info-dark: #2563eb;
-	$u-info-disabled: rgba(#3b82f6, 0.5);
-	$u-main-color: #333;
-	$u-content-color: #666;
-	$u-tips-color: #999;
-	$u-light-color: #f5f5f5;
-	
 	/*每个页面公共css */
-	@import "uview-plus/index.scss";
 	@import "uni.scss";
+	@import "uview-plus/index.scss";
 	
 	/* 全局动画效果 */
 	@keyframes fadeIn {
@@ -157,5 +130,155 @@
 	
 	::-webkit-scrollbar-thumb:hover {
 		background: $uni-border-color-dark;
+	}
+
+	/* 全局容器样式 */
+	.container {
+		width: 100%;
+		max-width: 750rpx;
+		margin: 0 auto;
+		padding: 20rpx;
+		box-sizing: border-box;
+	}
+
+	/* 卡片样式 */
+	.card {
+		background: $uni-bg-color;
+		border-radius: $uni-border-radius-lg;
+		box-shadow: $uni-shadow-sm;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		transition: all 0.3s ease;
+	}
+
+	.card:hover {
+		box-shadow: $uni-shadow-md;
+		transform: translateY(-2rpx);
+	}
+
+	/* 按钮样式优化 */
+	.btn-primary {
+		background: $uni-color-primary;
+		color: $uni-text-color-inverse;
+		border: none;
+		border-radius: $uni-border-radius-base;
+		padding: 16rpx 32rpx;
+		font-size: $uni-font-size-base;
+		font-weight: 500;
+		transition: all 0.3s ease;
+	}
+
+	.btn-primary:hover {
+		background: $uni-color-primary-dark;
+		transform: translateY(-2rpx);
+		box-shadow: $uni-shadow-sm;
+	}
+
+	.btn-secondary {
+		background: $uni-bg-color;
+		color: $uni-color-primary;
+		border: 1rpx solid $uni-color-primary;
+		border-radius: $uni-border-radius-base;
+		padding: 16rpx 32rpx;
+		font-size: $uni-font-size-base;
+		transition: all 0.3s ease;
+	}
+
+	.btn-secondary:hover {
+		background: rgba($uni-color-primary, 0.05);
+		transform: translateY(-2rpx);
+	}
+
+	/* 输入框样式优化 */
+	.input {
+		width: 100%;
+		padding: 16rpx 20rpx;
+		border: 1rpx solid $uni-border-color;
+		border-radius: $uni-border-radius-base;
+		font-size: $uni-font-size-base;
+		transition: all 0.3s ease;
+		box-sizing: border-box;
+	}
+
+	.input:focus {
+		outline: none;
+		border-color: $uni-color-primary;
+		box-shadow: 0 0 0 3rpx rgba($uni-color-primary, 0.1);
+	}
+
+	/* 标题样式 */
+	.title {
+		font-size: $uni-font-size-title;
+		font-weight: 600;
+		color: $uni-text-color;
+		margin-bottom: 20rpx;
+		text-align: center;
+	}
+
+	.subtitle {
+		font-size: $uni-font-size-lg;
+		font-weight: 500;
+		color: $uni-text-color;
+		margin-bottom: 16rpx;
+	}
+
+	/* 文本居中 */
+	.text-center {
+		text-align: center;
+	}
+
+	/* 弹性布局 */
+	.flex {
+		display: flex;
+	}
+
+	.flex-center {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.flex-between {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.flex-column {
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* 间距 */
+	.mt-10 {
+		margin-top: 10rpx;
+	}
+
+	.mt-20 {
+		margin-top: 20rpx;
+	}
+
+	.mb-10 {
+		margin-bottom: 10rpx;
+	}
+
+	.mb-20 {
+		margin-bottom: 20rpx;
+	}
+
+	.mx-auto {
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	/* 响应式设计 */
+	@media screen and (max-width: 750rpx) {
+		.container {
+			padding: 16rpx;
+		}
+
+		.card {
+			padding: 20rpx;
+		}
 	}
 </style>
