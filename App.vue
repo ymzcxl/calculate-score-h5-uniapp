@@ -1,161 +1,133 @@
 <script>
-	export default {
-		onLaunch: function() {
-			console.log('App Launch')
-		},
-		onShow: function() {
-			console.log('App Show')
-		},
-		onHide: function() {
-			console.log('App Hide')
-		}
-	}
+export default {
+  onLaunch() {
+    console.log('App Launch');
+  },
+  onShow() {
+    console.log('App Show');
+  },
+  onHide() {
+    console.log('App Hide');
+  }
+};
 </script>
 
 <style lang="scss">
-	/* uview-plus 必要变量定义 */
-	$u-border-color: #e5e7eb;
-	$u-primary: #4facfe;
-	$u-primary-light: #00f2fe;
-	$u-primary-dark: #3a86ff;
-	$u-primary-disabled: rgba(#4facfe, 0.5);
-	$u-success: #10b981;
-	$u-success-light: rgba(#10b981, 0.1);
-	$u-success-dark: #059669;
-	$u-success-disabled: rgba(#10b981, 0.5);
-	$u-warning: #f59e0b;
-	$u-warning-light: rgba(#f59e0b, 0.1);
-	$u-warning-dark: #d97706;
-	$u-warning-disabled: rgba(#f59e0b, 0.5);
-	$u-error: #ef4444;
-	$u-error-light: rgba(#ef4444, 0.1);
-	$u-error-dark: #dc2626;
-	$u-error-disabled: rgba(#ef4444, 0.5);
-	$u-info: #3b82f6;
-	$u-info-light: rgba(#3b82f6, 0.1);
-	$u-info-dark: #2563eb;
-	$u-info-disabled: rgba(#3b82f6, 0.5);
-	$u-main-color: #333;
-	$u-content-color: #666;
-	$u-tips-color: #999;
-	$u-light-color: #f5f5f5;
-	
-	/*每个页面公共css */
-	@import "uview-plus/index.scss";
-	@import "uni.scss";
-	
-	/* 全局动画效果 */
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(20rpx);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-	
-	@keyframes slideUp {
-		from {
-			opacity: 0;
-			transform: translateY(50rpx) scale(0.95);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
-	
-	@keyframes slideIn {
-		from {
-			opacity: 0;
-			transform: translateX(-20rpx);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
-	}
-	
-	@keyframes pulse {
-		0% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.05);
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-	
-	@keyframes bounce {
-		0%, 20%, 50%, 80%, 100% {
-			transform: translateY(0);
-		}
-		40% {
-			transform: translateY(-20rpx);
-		}
-		60% {
-			transform: translateY(-10rpx);
-		}
-	}
-	
-	@keyframes float {
-		0% {
-			transform: translate(0, 0) rotate(0deg);
-		}
-		50% {
-			transform: translate(10%, 10%) rotate(180deg);
-		}
-		100% {
-			transform: translate(0, 0) rotate(360deg);
-		}
-	}
-	
-	/* 全局过渡效果 */
-	.page-enter-active,
-	.page-leave-active {
-		transition: all 0.3s ease;
-	}
-	
-	.page-enter-from {
-		opacity: 0;
-		transform: translateX(100%);
-	}
-	
-	.page-leave-to {
-		opacity: 0;
-		transform: translateX(-100%);
-	}
-	
-	/* 全局按钮样式 */
-	button {
-		transition: all 0.3s ease;
-	}
-	
-	button:hover {
-		transform: translateY(-2rpx);
-	}
-	
-	/* 全局滚动条样式 */
-	::-webkit-scrollbar {
-		width: 6rpx;
-		height: 6rpx;
-	}
-	
-	::-webkit-scrollbar-track {
-		background: $uni-bg-color-grey;
-		border-radius: $uni-border-radius-full;
-	}
-	
-	::-webkit-scrollbar-thumb {
-		background: $uni-border-color;
-		border-radius: $uni-border-radius-full;
-	}
-	
-	::-webkit-scrollbar-thumb:hover {
-		background: $uni-border-color-dark;
-	}
+@import "uview-plus/index.scss";
+@import "uni.scss";
+
+page {
+  background:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.24), transparent 32%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.2), transparent 28%),
+    linear-gradient(180deg, #09111f 0%, #0f172a 42%, #111827 100%);
+  color: #f8fafc;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+view,
+text,
+button,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+}
+
+button::after {
+  border: none;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 32rpx 24rpx 48rpx;
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1rpx solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 24rpx 80rpx rgba(15, 23, 42, 0.36);
+  backdrop-filter: blur(28rpx);
+  border-radius: 32rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.section-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 92rpx;
+  padding: 0 28rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 700;
+  box-shadow: 0 20rpx 48rpx rgba(99, 102, 241, 0.28);
+}
+
+.secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 84rpx;
+  padding: 0 26rpx;
+  border-radius: 24rpx;
+  background: rgba(30, 41, 59, 0.88);
+  border: 1rpx solid rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.danger-button {
+  background: rgba(127, 29, 29, 0.9);
+  color: #fecaca;
+}
+
+.field {
+  width: 100%;
+  min-height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: 22rpx;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1rpx solid rgba(148, 163, 184, 0.16);
+  color: #f8fafc;
+  font-size: 28rpx;
+}
+
+.field::placeholder {
+  color: #64748b;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  font-size: 20rpx;
+  font-weight: 600;
+}
 </style>

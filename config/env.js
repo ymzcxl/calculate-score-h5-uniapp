@@ -1,23 +1,24 @@
-// 环境配置
-export const env = {
-  // 开发环境
+const getBrowserOrigin = () => {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  return 'http://38.182.96.171:3000';
+};
+
+const env = {
   development: {
-    API_BASE_URL: 'http://localhost:3000/api'
+    API_BASE_URL: 'http://localhost:3000/api',
+    SOCKET_URL: 'http://localhost:3000'
   },
-  // 生产环境
   production: {
-    API_BASE_URL: 'http://38.182.96.171:3000/api'
+    API_BASE_URL: `${getBrowserOrigin()}/api`,
+    SOCKET_URL: getBrowserOrigin()
   }
 };
 
-// 获取当前环境
-export const getCurrentEnv = () => {
-  // 小程序环境判断
-  if (process.env.NODE_ENV === 'production') {
-    return 'production';
-  }
-  return 'development';
-};
+export const getCurrentEnv = () => (
+  process.env.NODE_ENV === 'production' ? 'production' : 'development'
+);
 
-// 导出当前环境的配置
 export const currentConfig = env[getCurrentEnv()];
