@@ -10,14 +10,6 @@ import IndexPage from './pages/index/index.vue'
 import HistoryPage from './pages/history/history.vue'
 import RoomPage from './pages/room/room.vue'
 
-const routeTitleMap = {
-  '/pages/login/login': '登录',
-  '/pages/login/forgot-password': '找回密码',
-  '/pages/index/index': '首页',
-  '/pages/history/history': '历史战绩',
-  '/pages/room/room': '实时牌局'
-}
-
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -33,15 +25,6 @@ const router = createRouter({
     { path: '/pages/history/history', component: HistoryPage },
     { path: '/pages/room/room', component: RoomPage }
   ]
-})
-
-router.afterEach((to) => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  const pageTitle = routeTitleMap[to.path] || '牌友记分'
-  document.title = `${pageTitle} | 牌友记分`
 })
 
 createApp(App)

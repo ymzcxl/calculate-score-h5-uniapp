@@ -58,6 +58,5 @@ export const api = {
   getHistoryList: () => request({ url: '/history/list', auth: true }),
   getHistoryDetail: (roomId) => request({ url: `/history/detail?roomId=${encodeURIComponent(roomId)}`, auth: true }),
   clearHistory: () => request({ url: '/history/clear', method: 'POST', auth: true }),
-  getStats: () => request({ url: '/history/stats', auth: true }),
-  takeoverSeat: (data) => request({ url: '/room/takeover', method: 'POST', data, auth: true })
+  getStats: () => request({ url: '/history/stats', auth: true })
 };

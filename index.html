@@ -9,7 +9,386 @@
         '<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
         (coverSupport ? ', viewport-fit=cover' : '') + '" />')
     </script>
-    <title></title>
+    <script>
+      window.__uniConfig = Object.assign({
+        appId: '__UNI__FB8D6DF',
+        appName: '牌友记分',
+        appVersion: '1.0.0',
+        appVersionCode: '100',
+        appname: '牌友记分',
+        pages: [
+          'pages/login/login',
+          'pages/login/forgot-password',
+          'pages/index/index',
+          'pages/history/history',
+          'pages/room/room'
+        ],
+        globalStyle: {
+          backgroundColor: '#F8F8F8',
+          navigationBar: {
+            backgroundColor: '#F8F8F8',
+            titleText: '打牌计分',
+            titleColor: '#000000',
+            type: 'default'
+          },
+          isNVue: false
+        },
+        nvue: {
+          compiler: 'uni-app',
+          styleCompiler: 'uni-app',
+          'flex-direction': 'column'
+        },
+        renderer: 'auto',
+        splashscreen: {
+          alwaysShowBeforeRender: true,
+          autoclose: true
+        },
+        compilerVersion: '3.0.0-5020420260813001',
+        entryPagePath: 'pages/login/login',
+        entryPageQuery: '',
+        realEntryPagePath: '',
+        async: {
+          delay: 200,
+          timeout: 30000,
+          suspensible: false
+        },
+        debug: false,
+        networkTimeout: {
+          request: 60000,
+          connectSocket: 60000,
+          uploadFile: 60000,
+          downloadFile: 60000
+        },
+        sdkConfigs: {},
+        locale: 'zh-Hans',
+        fallbackLocale: 'zh-Hans',
+        locales: {},
+        router: {
+          mode: 'hash',
+          base: '/',
+          assets: 'assets'
+        },
+        darkmode: false,
+        themeConfig: {}
+      }, window.__uniConfig || {})
+      window.__uniRoutes = window.__uniRoutes || [
+        {
+          path: '/',
+          alias: '/pages/login/login',
+          meta: {
+            isQuit: true,
+            isEntry: true,
+            route: 'pages/login/login',
+            navigationBar: {
+              titleText: '登录',
+              style: 'custom',
+              type: 'default'
+            },
+            isNVue: false
+          }
+        },
+        {
+          path: '/pages/login/forgot-password',
+          meta: {
+            route: 'pages/login/forgot-password',
+            navigationBar: {
+              titleText: '忘记密码',
+              style: 'custom',
+              type: 'default'
+            },
+            isNVue: false
+          }
+        },
+        {
+          path: '/pages/index/index',
+          meta: {
+            route: 'pages/index/index',
+            navigationBar: {
+              titleText: '打牌计分',
+              type: 'default'
+            },
+            isNVue: false
+          }
+        },
+        {
+          path: '/pages/history/history',
+          meta: {
+            route: 'pages/history/history',
+            navigationBar: {
+              titleText: '历史记录',
+              type: 'default'
+            },
+            isNVue: false
+          }
+        },
+        {
+          path: '/pages/room/room',
+          meta: {
+            route: 'pages/room/room',
+            navigationBar: {
+              titleText: '房间',
+              type: 'default'
+            },
+            isNVue: false
+          }
+        }
+      ]
+      window.__uniLayout = window.__uniLayout || {}
+    </script>
+    <script>
+      (function () {
+        var storagePrefix = '__scoring_uni_storage__:'
+        var toastTimer = null
+        var loadingNode = null
+        var localeListeners = []
+
+        function readStorage(key) {
+          var raw = window.localStorage.getItem(storagePrefix + key)
+          if (raw === null) {
+            return ''
+          }
+          try {
+            return JSON.parse(raw).value
+          } catch (error) {
+            return raw
+          }
+        }
+
+        function writeStorage(key, value) {
+          window.localStorage.setItem(storagePrefix + key, JSON.stringify({ value: value }))
+        }
+
+        function ensureToastNode() {
+          var node = document.getElementById('uni-toast-compat')
+          if (node) {
+            return node
+          }
+          node = document.createElement('div')
+          node.id = 'uni-toast-compat'
+          node.style.position = 'fixed'
+          node.style.left = '50%'
+          node.style.bottom = '120px'
+          node.style.transform = 'translateX(-50%)'
+          node.style.maxWidth = '72vw'
+          node.style.padding = '10px 16px'
+          node.style.borderRadius = '999px'
+          node.style.background = 'rgba(15, 23, 42, 0.92)'
+          node.style.color = '#f8fafc'
+          node.style.fontSize = '14px'
+          node.style.lineHeight = '1.4'
+          node.style.textAlign = 'center'
+          node.style.zIndex = '99999'
+          node.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.28)'
+          node.style.display = 'none'
+          document.body.appendChild(node)
+          return node
+        }
+
+        function showToast(title) {
+          var node = ensureToastNode()
+          node.textContent = title || ''
+          node.style.display = title ? 'block' : 'none'
+          if (toastTimer) {
+            window.clearTimeout(toastTimer)
+          }
+          toastTimer = window.setTimeout(function () {
+            node.style.display = 'none'
+          }, 1800)
+        }
+
+        function showLoading(title) {
+          if (!loadingNode) {
+            loadingNode = document.createElement('div')
+            loadingNode.id = 'uni-loading-compat'
+            loadingNode.style.position = 'fixed'
+            loadingNode.style.inset = '0'
+            loadingNode.style.display = 'flex'
+            loadingNode.style.alignItems = 'center'
+            loadingNode.style.justifyContent = 'center'
+            loadingNode.style.background = 'rgba(2, 6, 23, 0.42)'
+            loadingNode.style.zIndex = '99998'
+            loadingNode.innerHTML = '<div style="padding:12px 18px;border-radius:18px;background:rgba(15,23,42,0.92);color:#f8fafc;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,0.28)"></div>'
+            document.body.appendChild(loadingNode)
+          }
+          loadingNode.querySelector('div').textContent = title || '加载中'
+          loadingNode.style.display = 'flex'
+        }
+
+        function hideLoading() {
+          if (loadingNode) {
+            loadingNode.style.display = 'none'
+          }
+        }
+
+        function normalizeUrl(url) {
+          if (!url) {
+            return '/pages/login/login'
+          }
+          return url.charAt(0) === '/' ? url : '/' + url
+        }
+
+        function navigate(url, replace) {
+          var target = normalizeUrl(url)
+          if (replace) {
+            window.location.replace('#' + target)
+          } else {
+            window.location.hash = target
+          }
+        }
+
+        function request(options) {
+          options = options || {}
+          var method = (options.method || 'GET').toUpperCase()
+          var headers = Object.assign({}, options.header || {})
+          var fetchOptions = {
+            method: method,
+            headers: headers
+          }
+
+          if (method !== 'GET' && options.data !== undefined) {
+            if (!(options.data instanceof FormData) && !headers['Content-Type'] && !headers['content-type']) {
+              headers['Content-Type'] = 'application/json'
+            }
+            fetchOptions.body = headers['Content-Type'] === 'application/json'
+              ? JSON.stringify(options.data)
+              : options.data
+          }
+
+          window.fetch(options.url, fetchOptions)
+            .then(function (response) {
+              var contentType = response.headers.get('content-type') || ''
+              var payload = contentType.indexOf('application/json') > -1 ? response.json() : response.text()
+              return payload.then(function (data) {
+                var header = {}
+                response.headers.forEach(function (value, key) {
+                  header[key] = value
+                })
+                options.success && options.success({
+                  data: data,
+                  statusCode: response.status,
+                  header: header
+                })
+                options.complete && options.complete()
+              })
+            })
+            .catch(function (error) {
+              options.fail && options.fail(error)
+              options.complete && options.complete()
+            })
+        }
+
+        var uniCompat = window.uni || {}
+
+        uniCompat.addInterceptor = uniCompat.addInterceptor || function () {}
+        uniCompat.setStorageSync = writeStorage
+        uniCompat.getStorageSync = readStorage
+        uniCompat.removeStorageSync = function (key) {
+          window.localStorage.removeItem(storagePrefix + key)
+        }
+        uniCompat.request = request
+        uniCompat.getLocale = uniCompat.getLocale || function () {
+          return window.__uniConfig && window.__uniConfig.locale
+            ? window.__uniConfig.locale
+            : 'zh-Hans'
+        }
+        uniCompat.setLocale = uniCompat.setLocale || function (locale) {
+          if (window.__uniConfig) {
+            window.__uniConfig.locale = locale || 'zh-Hans'
+          }
+          localeListeners.forEach(function (listener) {
+            try {
+              listener({
+                locale: uniCompat.getLocale()
+              })
+            } catch (error) {}
+          })
+          return {
+            locale: uniCompat.getLocale()
+          }
+        }
+        uniCompat.onLocaleChange = uniCompat.onLocaleChange || function (callback) {
+          if (typeof callback === 'function' && localeListeners.indexOf(callback) === -1) {
+            localeListeners.push(callback)
+          }
+        }
+        uniCompat.offLocaleChange = uniCompat.offLocaleChange || function (callback) {
+          if (!callback) {
+            localeListeners = []
+            return
+          }
+          localeListeners = localeListeners.filter(function (listener) {
+            return listener !== callback
+          })
+        }
+        uniCompat.navigateTo = function (options) {
+          navigate(options && options.url, false)
+          options && options.success && options.success()
+        }
+        uniCompat.reLaunch = function (options) {
+          navigate(options && options.url, true)
+          options && options.success && options.success()
+        }
+        uniCompat.navigateBack = function (options) {
+          var delta = options && options.delta ? options.delta : 1
+          window.history.go(-delta)
+          options && options.success && options.success()
+        }
+        uniCompat.showToast = function (options) {
+          showToast(options && options.title)
+          options && options.success && options.success()
+        }
+        uniCompat.showLoading = function (options) {
+          showLoading(options && options.title)
+          options && options.success && options.success()
+        }
+        uniCompat.hideLoading = function (options) {
+          hideLoading()
+          options && options.success && options.success()
+        }
+        uniCompat.showModal = function (options) {
+          var confirmed = window.confirm((options && options.content) || '')
+          options && options.success && options.success({
+            confirm: confirmed,
+            cancel: !confirmed
+          })
+          options && options.complete && options.complete()
+        }
+        uniCompat.setClipboardData = function (options) {
+          var text = options && options.data ? String(options.data) : ''
+          navigator.clipboard.writeText(text).then(function () {
+            options && options.success && options.success({ data: text })
+            options && options.complete && options.complete({ data: text })
+          }).catch(function (error) {
+            options && options.fail && options.fail(error)
+            options && options.complete && options.complete(error)
+          })
+        }
+        uniCompat.getClipboardData = function (options) {
+          navigator.clipboard.readText().then(function (text) {
+            options && options.success && options.success({ data: text })
+            options && options.complete && options.complete({ data: text })
+          }).catch(function (error) {
+            options && options.fail && options.fail(error)
+            options && options.complete && options.complete(error)
+          })
+        }
+
+        window.uni = uniCompat
+        window.wx = uniCompat
+        window.getApp = window.getApp || function () {
+          return { $vm: { $locale: 'zh-Hans' } }
+        }
+        window.getCurrentPages = window.getCurrentPages || function () {
+          var hash = window.location.hash.replace(/^#/, '') || '/pages/login/login'
+          return [{ route: hash.replace(/^\//, '') }]
+        }
+        window.rpx2px = window.rpx2px || function (value) {
+          return Number(value) || 0
+        }
+      })()
+    </script>
+    <title>牌友记分</title>
+    <link rel="icon" href="/static/logo.png" />
     <!--preload-links-->
     <!--app-context-->
   </head>

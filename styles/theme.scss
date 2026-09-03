@@ -1,0 +1,168 @@
+/* 马卡龙色彩主题 (Macaron Theme) */
+:root {
+  /* 品牌色 - 柔和的马卡龙色系 */
+  --primary: #FFB3BA; /* 樱花粉 */
+  --primary-light: #FFDFE2;
+  --secondary: #A0C4FF; /* 晴空蓝 */
+  --secondary-light: #D4E4FF;
+  --success: #B9FBC0; /* 薄荷绿 */
+  --warning: #FDFD96; /* 柠檬黄 */
+  --danger: #FFC8DD; /* 蜜桃粉 */
+
+  /* 背景色 */
+  --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  --bg-color: #F7F9FC; /* 页面底色 */
+  --card-bg: #FFFFFF; /* 卡片底色 */
+
+  /* 文本色 */
+  --text-main: #4A4A4A; /* 主文本 */
+  --text-sub: #8E9299; /* 副文本 */
+  --text-light: #C5C8CE;
+
+  /* 边框和阴影 */
+  --border-color: #F0F2F5;
+  --shadow-sm: 0 8rpx 24rpx rgba(160, 196, 255, 0.12);
+  --shadow-md: 0 16rpx 40rpx rgba(160, 196, 255, 0.2);
+  --shadow-lg: 0 24rpx 60rpx rgba(160, 196, 255, 0.25);
+  
+  /* 重点阴影 */
+  --shadow-primary: 0 12rpx 32rpx rgba(255, 179, 186, 0.35);
+  --shadow-secondary: 0 12rpx 32rpx rgba(160, 196, 255, 0.35);
+
+  /* 圆角 */
+  --radius-sm: 16rpx;
+  --radius-md: 24rpx;
+  --radius-lg: 32rpx;
+  --radius-xl: 48rpx;
+  --radius-pill: 999rpx;
+}
+
+/* 全局页面样式 */
+page {
+  background-color: var(--bg-color);
+  font-family: 'PingFang SC', 'Helvetica Neue', Helvetica, Tahoma, Arial, 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+/* 页面容器基础 */
+.app-shell {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) 30rpx calc(40rpx + env(safe-area-inset-bottom));
+  background: var(--bg-gradient);
+}
+
+/* 隐藏原生滚动条 */
+::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+/* 通用马卡龙卡片 */
+.macaron-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 36rpx;
+  margin-bottom: 28rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 按钮重置 */
+button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  line-height: 1;
+  outline: none;
+}
+button::after {
+  display: none;
+}
+
+/* 通用马卡龙按钮 */
+.macaron-btn {
+  background: linear-gradient(135deg, var(--secondary), #84b2ff);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 32rpx;
+  box-shadow: var(--shadow-secondary);
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  width: 100%;
+}
+.macaron-btn:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+.macaron-btn.pink {
+  background: linear-gradient(135deg, var(--primary), #ff9a9e);
+  box-shadow: var(--shadow-primary);
+}
+.macaron-btn.ghost {
+  background: transparent;
+  color: var(--secondary);
+  box-shadow: none;
+  border: 2rpx solid var(--secondary);
+}
+
+/* 通用输入框 */
+.macaron-input {
+  background: #F4F6F9;
+  border: 4rpx solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0 32rpx;
+  height: 96rpx;
+  font-size: 30rpx;
+  color: var(--text-main);
+  transition: all 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.macaron-input:focus,
+.macaron-input.active {
+  border-color: var(--secondary-light);
+  background: #fff;
+  box-shadow: 0 0 0 6rpx rgba(160, 196, 255, 0.15);
+}
+.macaron-input-placeholder {
+  color: var(--text-light);
+}
+
+/* 小药丸标签 */
+.macaron-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-pill);
+  font-size: 22rpx;
+  font-weight: bold;
+}
+.macaron-badge.blue {
+  background: var(--secondary-light);
+  color: #5c8ce6;
+}
+.macaron-badge.pink {
+  background: var(--primary-light);
+  color: #e67381;
+}
+.macaron-badge.green {
+  background: #d1fae5;
+  color: #059669;
+}
+.macaron-badge.yellow {
+  background: #fef08a;
+  color: #b45309;
+}

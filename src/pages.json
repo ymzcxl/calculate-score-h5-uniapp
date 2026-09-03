@@ -17,30 +17,27 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-                                "navigationBarTitleText": "打牌计分",
-                                "navigationStyle": "custom"
+				"navigationBarTitleText": "打牌计分"
 			}
 		},
 		{
 			"path": "pages/history/history",
 			"style": {
-                                "navigationBarTitleText": "历史记录",
-                                "navigationStyle": "custom"
+				"navigationBarTitleText": "历史记录"
 			}
 		},
 		{
 			"path": "pages/room/room",
 			"style": {
-                                "navigationBarTitleText": "房间",
-                                "navigationStyle": "custom"
+				"navigationBarTitleText": "房间"
 			}
 		}
 	],
 	"globalStyle": {
-                "navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "打牌计分",
-                "navigationBarBackgroundColor": "#1B1513",
-                "backgroundColor": "#1B1513"
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
 	},
 	"uniIdRouter": {}
 }

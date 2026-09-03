@@ -1,59 +1,100 @@
 <template>
-  <view class="login-page app-shell">
-    <view class="hero-panel glass-card">
-      <view class="hero-badge">Web 实时算分</view>
-      <view class="hero-title">打开链接就能进房，一套账号跨设备继续玩</view>
-      <view class="hero-desc">
-        现在这版按网页产品设计：手机号注册登录、链接分享进房、MongoDB 持久化历史，适合直接部署到线上域名使用。
+  <view class="app-shell login-page">
+    <!-- 活泼的背景装饰 -->
+    <view class="bg-shape shape-1"></view>
+    <view class="bg-shape shape-2"></view>
+    
+    <!-- 头部品牌区 -->
+    <view class="header-zone">
+      <view class="logo-box">
+        <text class="logo-icon">🎮</text>
       </view>
-
-      <view class="feature-grid">
-        <view class="feature-item">
-          <text class="feature-label">访问方式</text>
-          <text class="feature-value">URL 直达</text>
-        </view>
-        <view class="feature-item">
-          <text class="feature-label">账号体系</text>
-          <text class="feature-value">手机号登录</text>
-        </view>
-        <view class="feature-item">
-          <text class="feature-label">数据存储</text>
-          <text class="feature-value">MongoDB</text>
-        </view>
-      </view>
+      <text class="brand-title">牌友记分</text>
+      <text class="brand-sub">随时随地，开心开局</text>
     </view>
 
-    <view class="login-card glass-card">
-      <view class="section-title">{{ isRegister ? '创建你的账号' : '登录继续牌局' }}</view>
-      <view class="section-desc">
-        {{ pendingHint || (isRegister ? '注册后可以在任意浏览器继续你的历史牌局。' : '登录后会自动回到你刚才访问的页面。') }}
+    <!-- 登录注册卡片 -->
+    <view class="macaron-card form-card">
+      <view class="mode-switch">
+        <view class="switch-bg" :class="{ 'is-right': isRegister }"></view>
+        <view class="switch-item" :class="{ active: !isRegister }" @click="setMode(false)">登录</view>
+        <view class="switch-item" :class="{ active: isRegister }" @click="setMode(true)">注册</view>
       </view>
 
-      <view class="form-list">
-        <input v-model.trim="phone" class="field" type="number" maxlength="11" placeholder="请输入手机号" />
-        <input v-model="password" class="field" password placeholder="请输入密码" />
-        <input v-if="isRegister" v-model="confirmPassword" class="field" password placeholder="请确认密码" />
-        <input v-if="isRegister" v-model.trim="nickName" class="field" placeholder="请输入昵称" />
+      <view class="form-body">
+        <view class="input-wrap">
+          <text class="input-icon">📱</text>
+          <input 
+            class="macaron-input" 
+            v-model.trim="phone" 
+            type="number" 
+            maxlength="11" 
+            placeholder="手机号" 
+            placeholder-class="macaron-input-placeholder"
+          />
+        </view>
+
+        <view class="input-wrap">
+          <text class="input-icon">🔒</text>
+          <input 
+            class="macaron-input" 
+            v-model="password" 
+            password 
+            placeholder="密码" 
+            placeholder-class="macaron-input-placeholder"
+          />
+        </view>
+
+        <block v-if="isRegister">
+          <view class="input-wrap">
+            <text class="input-icon">✨</text>
+            <input 
+              class="macaron-input" 
+              v-model="confirmPassword" 
+              password 
+              placeholder="确认密码" 
+              placeholder-class="macaron-input-placeholder"
+            />
+          </view>
+          <view class="input-wrap">
+            <text class="input-icon">👻</text>
+            <input 
+              class="macaron-input" 
+              v-model.trim="nickName" 
+              placeholder="给自己起个响亮的昵称" 
+              placeholder-class="macaron-input-placeholder"
+            />
+          </view>
+        </block>
+
+        <button 
+          class="macaron-btn submit-btn" 
+          :class="{ pink: isRegister }" 
+          :loading="loading" 
+          @click="handlePhoneAuth"
+        >
+          {{ isRegister ? '开 始 注 册 🚀' : '进 入 牌 局 🎉' }}
+        </button>
+        
+        <!-- 记住密码 -->
+        <view v-if="!isRegister" class="remember-wrap" @click="toggleRemember">
+          <view class="checkbox-icon">
+            <text v-if="rememberPwd">✅</text>
+            <text v-else>⬜</text>
+          </view>
+          <text class="remember-text">记住密码</text>
+        </view>
       </view>
 
-      <button class="primary-button submit-button" :loading="loading" @click="handlePhoneAuth">
-        {{ isRegister ? '完成注册' : '立即登录' }}
-      </button>
-
-      <view class="panel-foot">
-        <text class="switch-link" @click="isRegister = !isRegister">
-          {{ isRegister ? '已有账号，去登录' : '没有账号，去注册' }}
-        </text>
-        <text v-if="!isRegister" class="switch-link danger-link" @click="goToForgotPassword">
-          忘记密码
-        </text>
+      <view v-if="!isRegister" class="action-links">
+        <text class="link-text" @click="goToForgotPassword">忘记密码咯？</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { api } from '../../utils/api';
 import { consumePendingRedirect } from '../../utils/auth';
 
@@ -63,41 +104,40 @@ const confirmPassword = ref('');
 const nickName = ref('');
 const loading = ref(false);
 const isRegister = ref(false);
-const pendingRedirect = ref('');
+const rememberPwd = ref(true);
 
-const pendingHint = computed(() => {
-  if (!pendingRedirect.value) {
-    return '';
-  }
-
-  return pendingRedirect.value.includes('/pages/room/room')
-    ? '登录后会自动回到分享给你的房间。'
-    : '登录后会自动回到你之前访问的页面。';
-});
+const toggleRemember = () => {
+  rememberPwd.value = !rememberPwd.value;
+};
 
 const resolveRedirect = () => {
-  pendingRedirect.value = consumePendingRedirect();
-  return pendingRedirect.value || '/pages/index/index';
+  return consumePendingRedirect() || '/pages/index/index';
 };
 
 const persistLogin = (payload) => {
   uni.setStorageSync('userInfo', payload.user);
   uni.setStorageSync('token', payload.token);
-  uni.showToast({ title: '登录成功', icon: 'success' });
+  
+  if (rememberPwd.value && !isRegister.value) {
+    uni.setStorageSync('savedAccount', { phone: phone.value, password: password.value });
+  } else if (!rememberPwd.value) {
+    uni.removeStorageSync('savedAccount');
+  }
+
+  uni.showToast({ title: isRegister.value ? '欢迎新牌友!' : '欢迎回来!', icon: 'none', duration: 1500 });
   const target = resolveRedirect();
   setTimeout(() => {
     uni.reLaunch({ url: target });
-  }, 400);
+  }, 1000);
 };
 
 const handlePhoneAuth = async () => {
   if (!phone.value || phone.value.length !== 11) {
-    uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
+    uni.showToast({ title: '请输入正确的11位手机号哦', icon: 'none' });
     return;
   }
-
   if (!password.value || password.value.length < 6) {
-    uni.showToast({ title: '密码长度至少 6 位', icon: 'none' });
+    uni.showToast({ title: '密码至少要6位呀', icon: 'none' });
     return;
   }
 
@@ -105,11 +145,10 @@ const handlePhoneAuth = async () => {
   try {
     if (isRegister.value) {
       if (!nickName.value || nickName.value.length < 2) {
-        throw new Error('昵称长度至少 2 位');
+        throw new Error('昵称太短啦，至少2个字');
       }
-
       if (password.value !== confirmPassword.value) {
-        throw new Error('两次密码输入不一致');
+        throw new Error('两次密码输入不一致呢');
       }
 
       const data = await api.register({
@@ -119,16 +158,15 @@ const handlePhoneAuth = async () => {
         nickName: nickName.value
       });
       persistLogin(data);
-      return;
+    } else {
+      const data = await api.loginByPhone({
+        phone: phone.value,
+        password: password.value
+      });
+      persistLogin(data);
     }
-
-    const data = await api.loginByPhone({
-      phone: phone.value,
-      password: password.value
-    });
-    persistLogin(data);
   } catch (error) {
-    uni.showToast({ title: error.message || '操作失败', icon: 'none' });
+    uni.showToast({ title: error.message || '操作失败了，再试一次', icon: 'none' });
   } finally {
     loading.value = false;
   }
@@ -138,15 +176,28 @@ const goToForgotPassword = () => {
   uni.navigateTo({ url: '/pages/login/forgot-password' });
 };
 
+const setMode = (mode) => {
+  isRegister.value = mode;
+  confirmPassword.value = '';
+  if (mode && !nickName.value) {
+    nickName.value = '';
+  }
+};
+
 onMounted(() => {
   const token = uni.getStorageSync('token');
   if (token) {
     const target = resolveRedirect();
     uni.reLaunch({ url: target });
-    return;
+  } else {
+    // 自动填充记住的密码
+    const savedAccount = uni.getStorageSync('savedAccount');
+    if (savedAccount) {
+      phone.value = savedAccount.phone || '';
+      password.value = savedAccount.password || '';
+      rememberPwd.value = true;
+    }
   }
-
-  pendingRedirect.value = uni.getStorageSync('pending_redirect_url') || '';
 });
 </script>
 
@@ -154,93 +205,183 @@ onMounted(() => {
 .login-page {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
   justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.hero-panel,
-.login-card {
-  padding: 36rpx 32rpx;
+/* 背景装饰图形 */
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60rpx);
+  z-index: 0;
+  opacity: 0.6;
+}
+.shape-1 {
+  width: 400rpx;
+  height: 400rpx;
+  background: var(--primary-light);
+  top: -100rpx;
+  right: -100rpx;
+}
+.shape-2 {
+  width: 500rpx;
+  height: 500rpx;
+  background: var(--secondary-light);
+  bottom: -150rpx;
+  left: -150rpx;
 }
 
-.hero-badge {
-  display: inline-flex;
-  width: fit-content;
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  background: rgba(59, 130, 246, 0.16);
-  color: #bfdbfe;
-  font-size: 22rpx;
-  font-weight: 700;
-}
-
-.hero-title {
-  margin-top: 20rpx;
-  font-size: 52rpx;
-  line-height: 1.2;
-  font-weight: 700;
-  color: #f8fafc;
-}
-
-.hero-desc {
-  margin-top: 18rpx;
-  font-size: 26rpx;
-  line-height: 1.7;
-  color: #94a3b8;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16rpx;
-  margin-top: 30rpx;
-}
-
-.feature-item {
-  padding: 22rpx 18rpx;
-  border-radius: 24rpx;
-  background: rgba(15, 23, 42, 0.76);
-  border: 1rpx solid rgba(148, 163, 184, 0.12);
-}
-
-.feature-label {
-  display: block;
-  font-size: 22rpx;
-  color: #94a3b8;
-}
-
-.feature-value {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #f8fafc;
-}
-
-.form-list {
+.header-zone {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
-  margin-top: 28rpx;
+  align-items: center;
+  margin-bottom: 60rpx;
+  margin-top: -100rpx;
 }
 
-.submit-button {
-  width: 100%;
-  margin-top: 24rpx;
-}
-
-.panel-foot {
+.logo-box {
+  width: 140rpx;
+  height: 140rpx;
+  background: #fff;
+  border-radius: 40rpx;
   display: flex;
-  justify-content: space-between;
-  margin-top: 24rpx;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16rpx 32rpx rgba(160, 196, 255, 0.2);
+  margin-bottom: 30rpx;
+  transform: rotate(-5deg);
+}
+.logo-icon {
+  font-size: 72rpx;
 }
 
-.switch-link {
-  color: #c7d2fe;
-  font-size: 24rpx;
+.brand-title {
+  font-size: 56rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: 4rpx;
+  text-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
 }
 
-.danger-link {
-  color: #fda4af;
+.brand-sub {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: var(--text-sub);
+  background: rgba(255,255,255,0.6);
+  padding: 8rpx 24rpx;
+  border-radius: var(--radius-pill);
+}
+
+.form-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 660rpx;
+  padding: 50rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.mode-switch {
+  display: flex;
+  position: relative;
+  background: #F4F6F9;
+  border-radius: var(--radius-pill);
+  height: 88rpx;
+  margin-bottom: 50rpx;
+  padding: 8rpx;
+  box-sizing: border-box;
+}
+
+.switch-bg {
+  position: absolute;
+  top: 8rpx;
+  left: 8rpx;
+  width: calc(50% - 8rpx);
+  height: 72rpx;
+  background: #fff;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.switch-bg.is-right {
+  transform: translateX(100%);
+}
+
+.switch-item {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: var(--text-sub);
+  transition: color 0.3s;
+}
+.switch-item.active {
+  color: var(--text-main);
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 28rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 32rpx;
+  z-index: 1;
+}
+
+.input-wrap .macaron-input {
+  padding-left: 80rpx; /* 为图标留出空间 */
+}
+
+.submit-btn {
+  margin-top: 20rpx;
+  font-size: 34rpx;
+  letter-spacing: 2rpx;
+}
+
+.remember-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: -10rpx;
+  padding: 10rpx;
+}
+.checkbox-icon {
+  font-size: 28rpx;
+}
+.remember-text {
+  font-size: 26rpx;
+  color: var(--text-sub);
+}
+
+.action-links {
+  margin-top: 40rpx;
+  text-align: center;
+}
+
+.link-text {
+  font-size: 26rpx;
+  color: var(--secondary);
+  font-weight: bold;
+  padding: 10rpx 20rpx;
 }
 </style>

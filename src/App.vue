@@ -5,10 +5,5 @@
 <style lang="scss">
 @import "uni.scss";
 @import "uview-plus/index.scss";
-@import "./styles/theme.scss";
-
-/* 全局基础样式补充 */
-page {
-  background-color: var(--bg-color);
-}
+@import "./styles/visual-system.scss";
 </style>
