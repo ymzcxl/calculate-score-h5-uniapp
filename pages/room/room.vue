@@ -12,105 +12,92 @@
       <view class="nav-btn" @click="goHome">首页</view>
     </view>
 
-    <view class="macaron-card top-overview-card">
-      <view class="overview-head">
-        <view class="overview-main">
-          <view class="room-code-row">
-            <text class="room-code-label">房间号</text>
-            <text class="room-code">{{ roomId || '--' }}</text>
-          </view>
-          <view class="room-meta-line">
-            <text class="meta-chip accent">{{ roomStatusText }}</text>
-            <text class="meta-chip">{{ roomRoleText }}</text>
-            <text class="meta-chip">{{ playerCount }} 人在线</text>
-            <text class="meta-chip">我 {{ formatScore(currentPlayer?.score || 0) }}</text>
-          </view>
-        </view>
-        <view class="overview-side">
-          <text class="overview-leader-label">当前领先</text>
-          <text class="overview-leader-name">{{ leaderPlayer ? leaderPlayer.name : '暂无' }}</text>
-        </view>
-      </view>
-
-      <view class="top-entry-grid">
-        <view class="entry-btn accent" @click="openRoomInfoPopup">
-          <text class="entry-name">房间信息</text>
-          <text class="entry-desc">房号 邀请 状态</text>
-        </view>
-        <view class="entry-btn secondary" @click="openLeaderboardPopup">
-          <text class="entry-name">排行榜</text>
-          <text class="entry-desc">名次 提醒领先</text>
-        </view>
-        <view class="entry-btn neutral" @click="openMoreActionsPopup">
-          <text class="entry-name">更多功能</text>
-          <text class="entry-desc">撤回 刷新 退出</text>
-        </view>
-      </view>
-
-      <view class="target-strip">
-        <view class="target-strip-main">
-          <text class="target-strip-label">当前操作对象</text>
-          <text class="target-strip-value">{{ selectedTargetName || '未指定，默认对全桌' }}</text>
-        </view>
-        <view
-          v-if="roomInfo.status === 'active'"
-          class="target-clear-btn"
-          :class="{ disabled: !selectedTargetId }"
-          @click="clearSelectedTarget"
-        >
-          发给全桌
-        </view>
-      </view>
-    </view>
-
-    <view class="player-compact-section">
-      <view class="section-head">
-        <text class="section-title">玩家区</text>
-        <text class="section-subtitle">{{ currentAudienceShortText }}</text>
-      </view>
-      <view class="player-chip-wrap">
-        <view
-          class="player-chip broadcast-chip"
-          :class="{ active: !selectedTargetId }"
-          @click="clearSelectedTarget"
-        >
-          <view class="player-chip-head">
-            <text class="player-chip-name">全桌</text>
-            <text class="player-chip-tag pink-tag">广播</text>
-          </view>
-          <text class="player-chip-score neutral">消息和互动发给所有人</text>
-        </view>
-
-        <view
-          v-for="player in players"
-          :key="player.userId"
-          class="player-chip"
-          :class="{
-            active: selectedTargetId === player.userId,
-            self: player.userId === currentUserId
-          }"
-          @click="selectTarget(player.userId)"
-        >
-          <view class="player-chip-top">
-            <image class="player-avatar" :src="getAvatarSrc(player)" mode="aspectFill" />
-            <view class="player-chip-badges">
-              <text v-if="player.userId === currentUserId" class="player-chip-tag green-tag">我</text>
-              <text v-else-if="leaderPlayer && leaderPlayer.userId === player.userId" class="player-chip-tag gold-tag">领先</text>
-              <text v-if="selectedTargetId === player.userId" class="player-chip-tag pink-tag">已选</text>
+    <view class="room-top-shell">
+      <view class="top-overview-panel macaron-card">
+        <view class="room-mini-bar">
+          <view class="room-mini-main">
+            <view class="room-id-line">
+              <text class="room-id-label">房间号</text>
+              <text class="room-id-value">{{ roomId || '--' }}</text>
+            </view>
+            <view class="room-mini-tags">
+              <text class="meta-chip accent">{{ roomStatusText }}</text>
+              <text class="meta-chip">{{ roomRoleText }}</text>
+              <text class="meta-chip">{{ playerCount }} 人在线</text>
+              <text class="meta-chip">我 {{ formatScore(currentPlayer?.score || 0) }}</text>
             </view>
           </view>
-          <view class="player-chip-info">
-            <text class="player-chip-name">{{ player.name }}</text>
-            <text class="player-chip-score" :class="{ positive: player.score > 0, negative: player.score < 0 }">
-              {{ formatScore(player.score) }}
-            </text>
+          <view class="room-mini-side">
+            <text class="leader-mini-label">领先</text>
+            <text class="leader-mini-name">{{ leaderPlayer ? leaderPlayer.name : '暂无' }}</text>
           </view>
-          <view
-            v-if="player.userId !== currentUserId && roomInfo.status === 'active'"
-            class="player-chip-action"
-            @click.stop="handleTakeover(player)"
-          >
-            接管
+        </view>
+
+        <view class="top-entry-row">
+          <view class="entry-btn accent" @click="openRoomInfoPopup">
+            <text class="entry-name">房间信息</text>
+            <text class="entry-desc">房号 邀请 状态</text>
+          </view>
+          <view class="entry-btn secondary" @click="openLeaderboardPopup">
+            <text class="entry-name">排行榜</text>
+            <text class="entry-desc">积分 名次 提醒</text>
+          </view>
+          <view class="entry-btn neutral" @click="openMoreActionsPopup">
+            <text class="entry-name">更多功能</text>
+            <text class="entry-desc">{{ isRoomCreator ? '撤回 结算 关房' : '撤回 刷新 退出' }}</text>
+          </view>
+        </view>
+
+        <view v-if="isRoomCreator && roomInfo.status === 'active'" class="creator-action-row">
+          <view class="creator-close-pill" @click="closeRoomDirectly">
+            房主关闭房间
+          </view>
+        </view>
+      </view>
+
+      <view class="player-strip-card macaron-card">
+        <view class="section-head compact">
+          <text class="section-title">玩家区</text>
+          <text class="section-subtitle">{{ currentAudienceShortText }}</text>
+        </view>
+
+        <scroll-view class="player-strip-scroll" scroll-x enable-flex show-scrollbar="false">
+          <view class="player-strip-list">
+            <view
+              v-for="player in players"
+              :key="player.userId"
+              class="player-square"
+              :class="{
+                active: selectedTargetId === player.userId,
+                self: player.userId === currentUserId
+              }"
+              @click="selectTarget(player.userId)"
+            >
+              <view class="player-square-avatar-shell">
+                <image class="player-square-avatar" :src="getAvatarSrc(player)" mode="aspectFill" />
+                <view
+                  v-if="player.userId === currentUserId || (leaderPlayer && leaderPlayer.userId === player.userId)"
+                  class="player-square-marker"
+                  :class="{ leader: leaderPlayer && leaderPlayer.userId === player.userId }"
+                >
+                  {{ player.userId === currentUserId ? '我' : '领' }}
+                </view>
+              </view>
+              <text class="player-square-name">{{ player.name || '未命名玩家' }}</text>
+              <text class="player-square-score" :class="{ positive: player.score > 0, negative: player.score < 0 }">
+                {{ formatScore(player.score) }}
+              </text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="target-hint-bar" :class="{ active: !!selectedTargetId }">
+          <view class="target-hint-copy">
+            <text class="target-hint-label">当前发送目标</text>
+            <text class="target-hint-name">{{ selectedTargetName || '默认发给全桌' }}</text>
+          </view>
+          <view v-if="selectedTargetId" class="target-hint-clear" @click="clearSelectedTarget">
+            再点一次取消
           </view>
         </view>
       </view>
@@ -121,7 +108,7 @@
         <view class="feed-head">
           <view>
             <view class="card-title">房间流水</view>
-            <view class="feed-subtitle">像聊天一样看最新消息和记分记录</view>
+            <view class="feed-subtitle">消息和计分都在这里，最新一条永远看得见</view>
           </view>
           <view class="feed-counter">{{ flowItems.length }} 条</view>
         </view>
@@ -150,8 +137,25 @@
               </view>
             </view>
           </view>
-          <view v-else class="empty-hint">还没有房间流水，先聊一句或者先记一笔分。</view>
+          <view v-else class="empty-hint">还没有房间流水，先发一句话或者先记一笔分。</view>
         </scroll-view>
+      </view>
+
+      <view class="broadcast-stage">
+        <view
+          v-for="broadcast in roomBroadcasts"
+          :key="broadcast.id"
+          class="broadcast-banner"
+          :class="broadcast.type"
+        >
+          <view v-if="isFuryBroadcast(broadcast)" class="broadcast-flare-row">
+            <text class="broadcast-flare">😤</text>
+            <text class="broadcast-flare">🔥</text>
+            <text class="broadcast-flare">😡</text>
+          </view>
+          <text class="broadcast-label">{{ broadcast.label }}</text>
+          <text class="broadcast-content">{{ broadcast.content }}</text>
+        </view>
       </view>
 
       <view class="interaction-stage">
@@ -159,26 +163,55 @@
           v-for="effect in interactionEffects"
           :key="effect.id"
           class="interaction-effect"
-          :class="{ bomb: effect.kind === '炸弹' }"
+          :class="{ bomb: effect.kind === '炸弹', combo: effect.count > 1 }"
           :style="{ left: effect.left, top: effect.top }"
         >
           <view class="effect-pulse"></view>
-          <text class="effect-emoji">{{ effect.emoji }}</text>
-          <text class="effect-caption">{{ effect.caption }}</text>
+          <view class="effect-main">
+            <text class="effect-emoji">{{ effect.emoji }}</text>
+            <text v-if="effect.count > 1" class="effect-count">x{{ effect.count }}</text>
+          </view>
+          <view v-if="effect.count > 1" class="effect-echo-row">
+            <text
+              v-for="index in getInteractionEchoCount(effect.count)"
+              :key="`${effect.id}-${index}`"
+              class="effect-echo"
+            >
+              {{ effect.emoji }}
+            </text>
+          </view>
+          <text class="effect-caption">{{ getInteractionCaptionText(effect) }}</text>
         </view>
       </view>
     </view>
 
     <view v-if="floatingPanelVisible" class="floating-dismiss" @click="floatingPanelVisible = false"></view>
 
-    <view class="floating-edge-stack">
-      <view v-if="floatingPanelVisible" class="floating-edge-panel">
+    <view class="floating-edge-launchers">
+      <view class="floating-edge-tab secondary" @click="toggleFloatingPanel('message')">
+        话术
+      </view>
+      <view class="floating-edge-tab" @click="toggleFloatingPanel('interaction')">
+        互动
+      </view>
+    </view>
+
+    <view v-if="floatingPanelVisible" class="floating-edge-stack">
+      <view class="floating-edge-panel">
         <view class="floating-panel-head">
           <text class="floating-title">{{ floatingPanelMode === 'interaction' ? '快捷互动' : '快捷话术' }}</text>
-          <text class="floating-subtitle">{{ currentAudienceHint }}</text>
+          <text class="floating-subtitle">
+            {{ floatingPanelMode === 'interaction' ? `${currentAudienceHint}，长按支持 10 连发` : currentAudienceHint }}
+          </text>
         </view>
         <view v-if="floatingPanelMode === 'interaction'" class="interaction-list floating-list">
-          <view v-for="item in interactionTools" :key="item.emoji" class="interaction-btn" @click="sendInteraction(item)">
+          <view
+            v-for="item in interactionTools"
+            :key="item.emoji"
+            class="interaction-btn"
+            @click="sendInteraction(item)"
+            @longpress="sendInteractionBurst(item, 10)"
+          >
             <text class="interaction-emoji">{{ item.emoji }}</text>
             <text class="interaction-name">{{ item.name }}</text>
           </view>
@@ -189,24 +222,15 @@
           </view>
         </view>
       </view>
-
-      <view class="floating-edge-tabs">
-        <view class="floating-edge-tab secondary" @click="toggleFloatingPanel('message')">
-          话术
-        </view>
-        <view class="floating-edge-tab" @click="toggleFloatingPanel('interaction')">
-          互动
-        </view>
-      </view>
     </view>
 
     <view class="bottom-wrapper">
       <view class="bottom-dock">
         <view class="chat-range-bar">
-          <text class="chat-range-label">这条消息发给谁</text>
+          <text class="chat-range-label">当前发送范围</text>
           <text class="chat-range-value">{{ currentAudienceHint }}</text>
         </view>
-        <view class="chat-row">
+        <view class="chat-row compact-chat-row">
           <input
             v-model.trim="message"
             class="macaron-input chat-input"
@@ -223,15 +247,21 @@
     <view v-if="scoreModalVisible" class="modal-mask" @click="scoreModalVisible = false">
       <view class="macaron-card modal-panel score-modal" @click.stop>
         <view class="modal-title">计分</view>
-        <view class="modal-desc">
-          从 <text class="highlight">{{ currentPlayerName }}</text> 记给
-          <text class="highlight">{{ selectedTargetName || '请选择目标玩家' }}</text>
+        <view class="score-head-card">
+          <view class="score-head-copy">
+            <text class="score-head-kicker">本次操作</text>
+            <text class="modal-desc score-modal-desc">
+              从 <text class="highlight">{{ currentPlayerName }}</text> 记给
+              <text class="highlight">{{ selectedTargetName || '请选择目标玩家' }}</text>
+            </text>
+          </view>
+          <view class="score-head-badge">支持小数</view>
         </view>
 
         <view class="target-picker">
           <view class="target-picker-head">
             <text class="target-picker-title">选择记分对象</text>
-            <text class="target-picker-tip">这里和页面上的选择保持同步</text>
+            <text class="target-picker-tip">这里和页面上的选择保持同步，不能给自己记分</text>
           </view>
           <view class="target-picker-list">
             <view
@@ -253,18 +283,25 @@
           </view>
         </view>
 
-        <view class="shortcut-grid">
+        <view class="score-shortcut-head">
+          <text class="score-shortcut-title">快捷分值</text>
+          <text class="score-shortcut-tip">常用就这四档，够快</text>
+        </view>
+
+        <view class="shortcut-grid compact-score-grid">
           <view v-for="item in shortcuts" :key="item" class="shortcut-chip" @click="updateScore(item)">
             +{{ item }}
           </view>
         </view>
 
-        <view class="custom-row">
-          <input v-model="customScore" class="macaron-input" type="number" placeholder="自定义分值" />
-          <button class="macaron-btn custom-btn" @click="submitCustomScore">记分</button>
+        <view class="custom-row score-custom-row">
+          <input v-model="customScore" class="macaron-input" type="digit" placeholder="自定义分值，例如 0.5 / 1.5" />
         </view>
 
-        <button class="macaron-btn ghost close-score-btn" @click="scoreModalVisible = false">关闭</button>
+        <view class="score-modal-actions">
+          <button class="macaron-btn" @click="submitCustomScore">确认记分</button>
+          <button class="macaron-btn ghost close-score-btn" @click="scoreModalVisible = false">关闭</button>
+        </view>
       </view>
     </view>
 
@@ -369,6 +406,9 @@
           <view v-if="isRoomCreator && roomInfo.status === 'active'" class="setting-item danger" @click="settleRoom">
             <text class="st-title">结束对局</text>
           </view>
+          <view v-if="isRoomCreator && roomInfo.status === 'active'" class="setting-item danger" @click="closeRoomDirectly">
+            <text class="st-title">关闭房间</text>
+          </view>
           <view class="setting-item danger" @click="exitRoom">
             <text class="st-title">{{ isRoomCreator ? '关闭并退出' : '退出房间' }}</text>
           </view>
@@ -405,17 +445,46 @@
 
     <view v-if="settlementData" class="settlement-mask">
       <view class="settlement-modal" :class="{ 'win-bg': settlementData.isWin }">
-        <view class="s-title-img">{{ settlementData.title }}</view>
+        <view class="settlement-hero">
+          <text class="settlement-kicker">本局结算</text>
+          <view class="s-title-img">{{ settlementData.title }}</view>
+          <text class="settlement-summary">{{ settlementData.summary }}</text>
+        </view>
+        <view v-if="settlementData.spotlights.length" class="settlement-spotlights">
+          <view
+            v-for="spotlight in settlementData.spotlights"
+            :key="spotlight.label"
+            class="spotlight-card"
+            :class="spotlight.tone"
+          >
+            <text class="spotlight-label">{{ spotlight.label }}</text>
+            <text class="spotlight-name">{{ spotlight.name }}</text>
+            <text class="spotlight-meta">{{ spotlight.meta }}</text>
+          </view>
+        </view>
         <view v-if="settlementData.mvp" class="s-mvp">
           <text class="crown">👑</text>
           <text class="mvp-name">MVP: {{ settlementData.mvp.name }}</text>
+          <text class="mvp-tag">{{ settlementData.mvpTitle }}</text>
           <text class="mvp-score">{{ formatScore(settlementData.mvp.score) }}</text>
         </view>
+        <view class="settlement-board-head">
+          <text class="settlement-board-title">排行榜</text>
+          <text class="settlement-board-subtitle">{{ settlementData.players.length }} 人本局排名</text>
+        </view>
         <scroll-view class="s-list" scroll-y>
-          <view v-for="(p, index) in settlementData.players" :key="p.userId" class="s-item">
+          <view
+            v-for="(p, index) in settlementData.players"
+            :key="p.userId"
+            class="s-item"
+            :class="{ podium: index < 3, self: p.userId === currentUserId }"
+          >
             <view class="s-rank">{{ index + 1 }}</view>
             <image class="s-avatar" :src="getAvatarSrc(p)" mode="aspectFill" />
-            <text class="s-name">{{ p.name }} <text v-if="p.userId === currentUserId">(我)</text></text>
+            <view class="s-main">
+              <text class="s-name">{{ p.name }} <text v-if="p.userId === currentUserId">(我)</text></text>
+              <text class="s-tagline">{{ p.funTitle }}</text>
+            </view>
             <text class="s-score" :class="{ positive: p.score > 0, negative: p.score < 0 }">{{ formatScore(p.score) }}</text>
           </view>
         </scroll-view>
@@ -439,13 +508,17 @@ import {
   redirectToLogin
 } from '../../utils/auth';
 
-const shortcuts = [1, 2, 5, 10, 20, 50];
-const quickMessages = ['漂亮一手', '稳住节奏', '继续冲', '准备收官'];
+const shortcuts = [1, 2, 5, 10];
+const quickMessages = ['漂亮一手', '稳住节奏', '先盯榜一', '这一分很关键', '别上头', '下一轮开追'];
 const interactionTools = [
   { emoji: '💣', name: '炸弹' },
   { emoji: '🌹', name: '鲜花' },
   { emoji: '🍺', name: '酒杯' },
-  { emoji: '👏', name: '鼓掌' }
+  { emoji: '👏', name: '鼓掌' },
+  { emoji: '😡', name: '发火' },
+  { emoji: '🔥', name: '点火' },
+  { emoji: '🤯', name: '炸裂' },
+  { emoji: '🤣', name: '笑喷' }
 ];
 
 const roomId = ref('');
@@ -468,6 +541,7 @@ const moreActionsPopup = ref(false);
 const scoreModalVisible = ref(false);
 const topToastMessage = ref('');
 const interactionEffects = ref([]);
+const roomBroadcasts = ref([]);
 const editName = ref('');
 const settlementData = ref(null);
 const floatingPanelVisible = ref(false);
@@ -475,6 +549,8 @@ const floatingPanelMode = ref('interaction');
 const feedScrollAnchor = ref('');
 const seenInteractionIds = new Set();
 const ignoredSocketEventKeys = new Set();
+const interactionEffectTimers = new Map();
+const roomBroadcastTimers = new Map();
 let topToastTimer = null;
 
 const confirmPopup = ref({
@@ -529,20 +605,20 @@ const currentAudienceShortText = computed(() => {
   if (roomInfo.value.status !== 'active') {
     return '牌局已结束';
   }
-  return selectedTargetName.value ? `当前只对 ${selectedTargetName.value}` : '当前对全桌';
+  return selectedTargetName.value ? `已选中 ${selectedTargetName.value}` : '横向滑动选择玩家';
 });
 const currentAudienceHint = computed(() => {
   if (roomInfo.value.status !== 'active') {
     return '牌局已结束，只看记录';
   }
-  return selectedTargetName.value ? `只发给 ${selectedTargetName.value}` : '发给全桌所有人';
+  return selectedTargetName.value ? `只发给 ${selectedTargetName.value}` : '默认发给全桌';
 });
-const messagePlaceholder = computed(() => (selectedTargetName.value ? `发给 ${selectedTargetName.value} 的话` : '发给全桌的话'));
+const messagePlaceholder = computed(() => (selectedTargetName.value ? `对 ${selectedTargetName.value} 说点什么` : '给全桌说点什么'));
 const leaderReminderText = computed(() => {
   if (!leaderPlayer.value) {
-    return '现在还没有明确领先的人。';
+    return '会在屏幕中间放一条更醒目的提醒，把大家注意力拉回来。';
   }
-  return `当前领先的是 ${leaderPlayer.value.name}，可以提醒大家盯一下分差。`;
+  return `会给 ${leaderPlayer.value.name} 上一层“盯住他”的动效提醒，全桌都看得见。`;
 });
 const revokeActionState = computed(() => {
   const latestRecord = latestRevocableScore.value;
@@ -771,6 +847,36 @@ const showTopToast = (msg) => {
   }, 2500);
 };
 
+const showRoomBroadcast = ({ id, type = 'leaderboard', label = '全桌广播', content = '' }) => {
+  if (!content) {
+    return;
+  }
+  const broadcastId = id || `broadcast_${type}_${Date.now()}`;
+  const existingIndex = roomBroadcasts.value.findIndex(item => item.id === broadcastId);
+  const broadcast = {
+    id: broadcastId,
+    type,
+    label,
+    content
+  };
+
+  if (existingIndex >= 0) {
+    roomBroadcasts.value = roomBroadcasts.value.map(item => (item.id === broadcastId ? broadcast : item));
+  } else {
+    roomBroadcasts.value = [...roomBroadcasts.value.slice(-1), broadcast];
+  }
+
+  const existingTimer = roomBroadcastTimers.get(broadcastId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+  const timer = setTimeout(() => {
+    roomBroadcasts.value = roomBroadcasts.value.filter(item => item.id !== broadcastId);
+    roomBroadcastTimers.delete(broadcastId);
+  }, 2600);
+  roomBroadcastTimers.set(broadcastId, timer);
+};
+
 const markIgnoredSocketEvent = (key) => {
   if (!key) return;
   ignoredSocketEventKeys.add(key);
@@ -895,7 +1001,11 @@ const toggleFloatingPanel = (mode) => {
 };
 
 const selectTarget = (userId) => {
-  if (roomInfo.value.status !== 'active' || userId === currentUserId.value) return;
+  if (roomInfo.value.status !== 'active') return;
+  if (userId === currentUserId.value) {
+    uni.showToast({ title: '不能选自己记分', icon: 'none' });
+    return;
+  }
   if (selectedTargetId.value === userId) {
     selectedTargetId.value = '';
     return;
@@ -946,7 +1056,7 @@ const updateScore = async (score) => {
 const submitCustomScore = () => {
   const score = Number(customScore.value);
   if (!score || score <= 0) {
-    uni.showToast({ title: '请输入正确的正整数', icon: 'none' });
+    uni.showToast({ title: '请输入大于 0 的分值，支持小数', icon: 'none' });
     return;
   }
   customScore.value = '';
@@ -982,6 +1092,34 @@ const handleRevokeLastScore = async () => {
   }, action === 'approve');
 };
 
+const approvePendingRevokeRequest = async () => {
+  try {
+    const result = await api.revokeScore({ roomId: roomId.value, action: 'approve' });
+    markIgnoredSocketEvent(getRevokeEventKey(result));
+    await syncRoom();
+    uni.showToast({ title: '已确认撤回上一笔', icon: 'none' });
+  } catch (error) {
+    uni.showToast({ title: error.message || '撤回失败', icon: 'none' });
+  }
+};
+
+const promptRevokeApproval = (payload) => {
+  const requesterName = getPlayerName(payload?.requesterUserId || payload?.history?.fromUserId, '对方');
+  const scoreValue = payload?.history?.score || latestRevocableScore.value?.score || 0;
+  showRoomBroadcast({
+    id: `revoke-pending-${payload?.history?.id || Date.now()}`,
+    type: 'revoke',
+    label: '待你确认',
+    content: `${requesterName} 申请撤回 ${formatScore(scoreValue)}，请确认`
+  });
+  showConfirm(
+    '确认撤回上一笔',
+    `${requesterName} 申请撤回记给你的 ${formatScore(scoreValue)}，确认后双方分数会回退。`,
+    approvePendingRevokeRequest,
+    true
+  );
+};
+
 const settleRoom = () => {
   moreActionsPopup.value = false;
   showConfirm('结束对局', '这会结算并保存本局战绩，确定结束吗？', async () => {
@@ -996,14 +1134,91 @@ const settleRoom = () => {
   }, true);
 };
 
+const closeRoomDirectly = () => {
+  moreActionsPopup.value = false;
+  showConfirm('关闭房间', '关闭后本局不会结算，但会通知所有人离开房间，确定继续吗？', async () => {
+    try {
+      await api.closeRoom({ roomId: roomId.value });
+      socket.value?.emit('room-closed', {
+        roomId: roomId.value,
+        operatorUserId: currentUserId.value,
+        message: '房主已关闭房间'
+      });
+      showSettlement(players.value, '房间已关闭');
+    } catch (error) {
+      uni.showToast({ title: error.message || '关闭失败', icon: 'none' });
+    }
+  }, true);
+};
+
 const showSettlement = (playerList, title = '结算排名') => {
   const sorted = [...playerList].sort((a, b) => b.score - a.score);
   const mvp = sorted.length > 0 && sorted[0].score > 0 ? sorted[0] : null;
+  const activeScoreLogs = scoreHistory.value.filter(item => !item.isRevoked);
+  const chatCounter = new Map();
+  const scoreFromCounter = new Map();
+  const scoreToCounter = new Map();
+
+  messages.value.forEach((item) => {
+    if (!item.userId) return;
+    chatCounter.set(item.userId, (chatCounter.get(item.userId) || 0) + 1);
+  });
+  activeScoreLogs.forEach((item) => {
+    scoreFromCounter.set(item.fromUserId, (scoreFromCounter.get(item.fromUserId) || 0) + 1);
+    scoreToCounter.set(item.toUserId, (scoreToCounter.get(item.toUserId) || 0) + 1);
+  });
+
+  const getHighestUserIds = (counter) => {
+    const pairs = [...counter.entries()].filter(([, count]) => count > 0);
+    if (!pairs.length) return [];
+    const maxCount = Math.max(...pairs.map(([, count]) => count));
+    return pairs.filter(([, count]) => count === maxCount).map(([userId]) => userId);
+  };
+
+  const attackLeaders = new Set(getHighestUserIds(scoreFromCounter));
+  const chatLeaders = new Set(getHighestUserIds(chatCounter));
+  const focusLeaders = new Set(getHighestUserIds(scoreToCounter));
+  const getFunTitle = (player, index) => {
+    if (index === 0) return '本局 MVP';
+    if (attackLeaders.has(player.userId)) return '火力全开';
+    if (chatLeaders.has(player.userId)) return '气氛担当';
+    if (focusLeaders.has(player.userId)) return '全桌焦点';
+    if (player.score === 0) return '稳台选手';
+    return player.score > 0 ? '稳步收分' : '下局再冲';
+  };
+
+  const rankedPlayers = sorted.map((player, index) => ({
+    ...player,
+    funTitle: getFunTitle(player, index)
+  }));
+  const spotlights = [];
+  const spotlightSeen = new Set();
+  const pushSpotlight = (label, player, meta, tone) => {
+    if (!player || spotlightSeen.has(player.userId)) {
+      return;
+    }
+    spotlightSeen.add(player.userId);
+    spotlights.push({
+      label,
+      name: player.name,
+      meta,
+      tone
+    });
+  };
+
+  pushSpotlight('冠军', rankedPlayers[0], `拿下 ${formatScore(rankedPlayers[0]?.score || 0)}`, 'gold');
+  const attackPlayer = rankedPlayers.find(player => attackLeaders.has(player.userId));
+  pushSpotlight('出手最多', attackPlayer, `${scoreFromCounter.get(attackPlayer?.userId) || 0} 次记分`, 'rose');
+  const chatPlayer = rankedPlayers.find(player => chatLeaders.has(player.userId));
+  pushSpotlight('气氛最足', chatPlayer, `${chatCounter.get(chatPlayer?.userId) || 0} 条消息`, 'blue');
 
   settlementData.value = {
     title,
-    players: sorted,
+    summary: mvp ? `${mvp.name} 收下本局最高分，排行榜已经锁定。` : '本局结束，排行榜已经出炉。',
+    players: rankedPlayers,
     mvp,
+    mvpTitle: mvp ? '全桌焦点' : '',
+    spotlights,
     isWin: !!(mvp && mvp.userId === currentUserId.value)
   };
 };
@@ -1072,7 +1287,7 @@ const sendMessage = async (contentOverride = '', options = {}) => {
 };
 
 const sendQuickReaction = async (content) => {
-  await sendMessage(content);
+  await sendMessage(content, { keepPanel: true });
 };
 
 const sendLeaderReminder = async () => {
@@ -1090,7 +1305,12 @@ const sendLeaderReminder = async () => {
     markIgnoredSocketEvent(getLeaderboardNoticeKey(result));
     await syncRoom();
     leaderboardPopup.value = false;
-    uni.showToast({ title: '已提醒全桌', icon: 'none' });
+    showRoomBroadcast({
+      id: `leaderboard-${result.messageId || Date.now()}`,
+      type: 'leaderboard fury',
+      label: '全桌围攻提醒',
+      content: result.content
+    });
   } catch (error) {
     uni.showToast({ title: error.message || '发送失败', icon: 'none' });
   }
@@ -1115,6 +1335,8 @@ const showChatBubble = (userId, content, targetUserId = '') => {
   showTopToast(`${name}${audienceText}：${content}`);
 };
 
+const isFuryBroadcast = (broadcast) => String(broadcast?.type || '').includes('fury');
+
 const buildInteractionCaption = (payload) => {
   const fromName = getPlayerName(payload.fromUserId, '玩家');
   const toName = payload.toUserId ? getPlayerName(payload.toUserId, '目标玩家') : '';
@@ -1125,31 +1347,79 @@ const buildInteractionCaption = (payload) => {
   return `${fromName} 对全桌送出${payload.name || '互动'} ${payload.emoji}`;
 };
 
+const getInteractionGroupKey = (payload) => `${payload.name || payload.emoji}_${payload.fromUserId}_${payload.toUserId || 'room'}`;
+
+const getInteractionEchoCount = (count) => Math.min(Math.max(count - 1, 0), 6);
+
+const getInteractionCaptionText = (effect) => {
+  if (effect.count > 1) {
+    return `${effect.caption} · 连发 x${effect.count}`;
+  }
+  return effect.caption;
+};
+
+const scheduleInteractionCleanup = (effectId, delay = 2600) => {
+  const existingTimer = interactionEffectTimers.get(effectId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+
+  const timer = setTimeout(() => {
+    interactionEffects.value = interactionEffects.value.filter(item => item.id !== effectId);
+    interactionEffectTimers.delete(effectId);
+  }, delay);
+  interactionEffectTimers.set(effectId, timer);
+};
+
 const pushInteractionEffect = (payload) => {
   const interactionId = payload.interactionId || `interaction_${Date.now()}`;
   if (seenInteractionIds.has(interactionId)) return;
   seenInteractionIds.add(interactionId);
 
-  const horizontalOffset = (Math.random() - 0.5) * 18;
-  const verticalOffset = (Math.random() - 0.5) * 12;
+  const now = Date.now();
+  const groupKey = getInteractionGroupKey(payload);
+  const existingEffect = interactionEffects.value.find(item => item.groupKey === groupKey && now - item.lastAt < 1600);
+
+  if (existingEffect) {
+    const increment = Math.max(payload.burstCount || 1, 1);
+    const nextCount = existingEffect.count + increment;
+    interactionEffects.value = interactionEffects.value.map(item => (
+      item.id === existingEffect.id
+        ? {
+            ...item,
+            count: nextCount,
+            caption: buildInteractionCaption(payload),
+            lastAt: now
+          }
+        : item
+    ));
+    scheduleInteractionCleanup(existingEffect.id, 2800);
+    return;
+  }
+
+  const stagePositions = [
+    { left: '50%', top: '48%' },
+    { left: '36%', top: '53%' },
+    { left: '64%', top: '44%' }
+  ];
+  const stagePosition = stagePositions[interactionEffects.value.length % stagePositions.length];
   const effect = {
     id: interactionId,
+    groupKey,
     emoji: payload.emoji,
     caption: buildInteractionCaption(payload),
     kind: payload.name || '',
-    left: `${50 + horizontalOffset}%`,
-    top: `${48 + verticalOffset}%`
+    count: Math.max(payload.burstCount || 1, 1),
+    left: stagePosition.left,
+    top: stagePosition.top,
+    lastAt: now
   };
 
   interactionEffects.value = [...interactionEffects.value, effect];
-  showTopToast(effect.caption);
-
-  setTimeout(() => {
-    interactionEffects.value = interactionEffects.value.filter(item => item.id !== interactionId);
-  }, 1600);
+  scheduleInteractionCleanup(effect.id);
 };
 
-const sendInteraction = (tool) => {
+const sendInteraction = (tool, burstCount = 1) => {
   if (roomInfo.value.status !== 'active') {
     uni.showToast({ title: '牌局已结束', icon: 'none' });
     return;
@@ -1162,12 +1432,16 @@ const sendInteraction = (tool) => {
     toUserId: selectedTargetId.value || '',
     emoji: tool.emoji,
     name: tool.name,
+    burstCount,
     timestamp: new Date().toISOString()
   };
 
-  floatingPanelVisible.value = false;
   pushInteractionEffect(payload);
   socket.value?.emit('interaction', payload);
+};
+
+const sendInteractionBurst = (tool, burstCount = 10) => {
+  sendInteraction(tool, burstCount);
 };
 
 const openScoreModal = () => {
@@ -1249,7 +1523,12 @@ const initSocket = () => {
       return;
     }
     if (data?.content) {
-      showTopToast(data.content);
+      showRoomBroadcast({
+        id: `leaderboard-${data.messageId || Date.now()}`,
+        type: 'leaderboard fury',
+        label: '全桌围攻提醒',
+        content: data.content
+      });
     }
     await syncRoomQuietly();
   });
@@ -1259,6 +1538,9 @@ const initSocket = () => {
       return;
     }
     showTopToast(buildRevokeSocketMessage(data));
+    if (data?.approverUserId === currentUserId.value) {
+      promptRevokeApproval(data);
+    }
     await syncRoomQuietly();
   });
 
@@ -1318,6 +1600,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (topToastTimer) clearTimeout(topToastTimer);
+  interactionEffectTimers.forEach(timer => clearTimeout(timer));
+  roomBroadcastTimers.forEach(timer => clearTimeout(timer));
   if (socket.value) {
     socket.value.emit('leave-room', roomId.value);
     socket.value.disconnect();
@@ -1367,7 +1651,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 14rpx) 30rpx 14rpx;
+  gap: 18rpx;
+  padding: calc(env(safe-area-inset-top) + 14rpx) 24rpx 12rpx;
   position: relative;
   z-index: 20;
 }
@@ -1395,8 +1680,6 @@ onUnmounted(() => {
 .setting-item,
 .shortcut-chip,
 .floating-edge-tab,
-.player-chip-action,
-.target-clear-btn,
 .notice-btn {
   display: inline-flex;
   align-items: center;
@@ -1416,57 +1699,63 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.top-overview-card {
-  margin: 0 24rpx 12rpx;
-  padding: 22rpx;
-  position: relative;
-  z-index: 10;
+.room-top-shell {
+  padding: 0 24rpx 10rpx;
 }
 
-.overview-head {
+.top-overview-panel {
+  padding: 14rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(245, 248, 255, 0.92));
+  box-shadow: 0 18rpx 34rpx rgba(148, 163, 184, 0.14);
+}
+
+.room-mini-bar {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18rpx;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 14rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 246, 255, 0.82));
+  border: 2rpx solid rgba(216, 226, 244, 0.76);
 }
 
-.overview-main {
+.room-mini-main {
   flex: 1;
   min-width: 0;
 }
 
-.room-code-row {
+.room-id-line {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 10rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 8rpx;
 }
 
-.room-code-label {
+.room-id-label {
   font-size: 22rpx;
   color: var(--text-sub);
 }
 
-.room-code {
+.room-id-value {
   font-size: 34rpx;
   font-weight: 900;
-  letter-spacing: 3rpx;
+  letter-spacing: 2rpx;
   color: var(--text-main);
 }
 
-.room-meta-line {
+.room-mini-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 10rpx;
+  gap: 6rpx;
 }
 
 .meta-chip {
-  padding: 8rpx 16rpx;
+  padding: 6rpx 14rpx;
   border-radius: 999rpx;
   background: #f4f7ff;
   color: var(--text-sub);
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 700;
 }
 
@@ -1475,42 +1764,45 @@ onUnmounted(() => {
   color: var(--primary-strong);
 }
 
-.overview-side {
-  min-width: 154rpx;
-  padding: 16rpx 18rpx;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.72);
+.room-mini-side {
+  min-width: 116rpx;
+  padding: 10rpx 12rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(180deg, #fff7fb, #fff1f8);
   text-align: right;
+  flex-shrink: 0;
 }
 
-.overview-leader-label {
+.leader-mini-label {
   display: block;
   font-size: 20rpx;
   color: var(--text-light);
 }
 
-.overview-leader-name {
+.leader-mini-name {
   display: block;
-  margin-top: 10rpx;
-  font-size: 28rpx;
+  margin-top: 6rpx;
+  font-size: 24rpx;
   font-weight: 900;
   color: var(--text-main);
 }
 
-.top-entry-grid {
-  margin-top: 16rpx;
+.top-entry-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12rpx;
+  gap: 10rpx;
+  margin-top: 12rpx;
 }
 
 .entry-btn {
-  min-height: 116rpx;
-  padding: 16rpx;
+  min-height: 94rpx;
+  padding: 12rpx 8rpx;
   border-radius: 26rpx;
   flex-direction: column;
-  gap: 8rpx;
-  box-shadow: 0 12rpx 24rpx rgba(148, 163, 184, 0.12);
+  gap: 6rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12rpx 24rpx rgba(148, 163, 184, 0.1);
+  min-width: 0;
 }
 
 .entry-btn.accent {
@@ -1526,69 +1818,45 @@ onUnmounted(() => {
 }
 
 .entry-name {
-  font-size: 26rpx;
+  font-size: 23rpx;
   font-weight: 900;
   color: var(--text-main);
-}
-
-.entry-desc {
-  font-size: 20rpx;
-  color: var(--text-light);
-}
-
-.target-strip {
-  margin-top: 16rpx;
-  padding: 16rpx 18rpx;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.78);
-  border: 2rpx solid rgba(224, 232, 246, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16rpx;
-}
-
-.target-strip-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.target-strip-label {
-  display: block;
-  font-size: 22rpx;
-  color: var(--text-light);
-}
-
-.target-strip-value {
-  display: block;
-  margin-top: 6rpx;
-  font-size: 28rpx;
-  font-weight: 900;
-  color: var(--text-main);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.target-clear-btn {
-  min-width: 136rpx;
-  height: 60rpx;
-  padding: 0 18rpx;
-  border-radius: 999rpx;
-  background: #fff0f6;
-  color: var(--primary-strong);
-  font-size: 22rpx;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.target-clear-btn.disabled {
-  background: #f3f4f6;
+.entry-desc {
+  max-width: 100%;
+  font-size: 18rpx;
   color: var(--text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.player-compact-section {
-  padding: 0 24rpx 12rpx;
+.creator-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12rpx;
+}
+
+.creator-close-pill {
+  min-height: 62rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+  color: #e11d48;
+  font-size: 22rpx;
+  font-weight: 900;
+  box-shadow: 0 10rpx 20rpx rgba(244, 63, 94, 0.12);
+}
+
+.player-strip-card {
+  margin-top: 10rpx;
+  padding: 16rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
 }
 
 .section-head {
@@ -1596,7 +1864,11 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 16rpx;
-  padding: 0 6rpx 12rpx;
+  padding: 0 4rpx 12rpx;
+}
+
+.section-head.compact {
+  padding-bottom: 10rpx;
 }
 
 .section-title {
@@ -1610,63 +1882,56 @@ onUnmounted(() => {
   color: var(--text-light);
 }
 
-.player-chip-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
+.player-strip-scroll {
+  white-space: nowrap;
+  width: 100%;
 }
 
-.player-chip {
-  width: calc(50% - 6rpx);
-  min-height: 142rpx;
-  padding: 14rpx;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 10rpx 22rpx rgba(148, 163, 184, 0.12);
-  border: 2rpx solid transparent;
+.player-strip-list {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 12rpx;
+  padding: 2rpx 12rpx 6rpx 0;
+  width: max-content;
+}
+
+.player-square {
+  width: 156rpx;
+  min-width: 156rpx;
+  height: 174rpx;
+  padding: 12rpx 12rpx 14rpx;
+  border-radius: 30rpx;
+  background: linear-gradient(180deg, #ffffff, #eef4ff);
+  border: 2rpx solid rgba(209, 223, 248, 0.72);
+  box-shadow: 0 14rpx 28rpx rgba(148, 163, 184, 0.14);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 10rpx;
+  text-align: center;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.player-chip.active {
-  border-color: var(--primary);
-  background: #fff;
+.player-square.active {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  border-color: rgba(147, 197, 253, 0.92);
+  box-shadow: 0 16rpx 30rpx rgba(37, 99, 235, 0.28);
+  transform: translateY(-2rpx);
 }
 
-.player-chip.self {
-  background: linear-gradient(180deg, #ffffff, #f6fbff);
+.player-square.self {
+  border-color: rgba(125, 211, 252, 0.92);
 }
 
-.broadcast-chip {
+.player-square-avatar-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.player-chip-top,
-.player-chip-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10rpx;
-}
-
-.player-avatar,
-.leaderboard-avatar {
-  width: 62rpx;
-  height: 62rpx;
-  border-radius: 20rpx;
-  background: #e2e8f0;
-  flex-shrink: 0;
-}
-
-.player-chip-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8rpx;
-}
-
-.player-chip-tag,
+.player-square-marker,
 .leaderboard-tag {
   padding: 4rpx 12rpx;
   border-radius: 999rpx;
@@ -1676,71 +1941,129 @@ onUnmounted(() => {
   line-height: 1.2;
 }
 
-.pink-tag {
-  background: var(--primary);
+.player-square-marker {
+  position: absolute;
+  right: -8rpx;
+  bottom: -6rpx;
+  min-width: 34rpx;
+  padding: 4rpx 10rpx;
+  background: #22c55e;
+  box-shadow: 0 8rpx 18rpx rgba(34, 197, 94, 0.24);
 }
 
-.green-tag,
+.player-square-marker.leader,
+.leader-tag {
+  background: #f59e0b;
+  box-shadow: 0 8rpx 18rpx rgba(245, 158, 11, 0.24);
+}
+
 .self-tag {
   background: #22c55e;
 }
 
-.gold-tag,
-.leader-tag {
-  background: #f59e0b;
+.player-square-avatar,
+.leaderboard-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 28rpx;
+  background: #e2e8f0;
+  box-shadow: 0 10rpx 18rpx rgba(148, 163, 184, 0.18);
+  flex-shrink: 0;
 }
 
-.player-chip-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10rpx;
-}
-
-.player-chip-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 24rpx;
+.player-square-name {
+  width: 100%;
+  font-size: 23rpx;
   font-weight: 800;
+  line-height: 1.4;
+  min-height: 58rpx;
   color: var(--text-main);
+  display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.player-chip-score,
+.player-square-score,
 .leaderboard-score {
-  font-size: 28rpx;
+  font-size: 25rpx;
   font-weight: 900;
   color: var(--text-main);
 }
 
-.player-chip-score.neutral {
-  font-size: 22rpx;
+.player-square.active .player-square-name,
+.player-square.active .player-square-score {
+  color: #fff;
+}
+
+.player-square-score.neutral {
+  font-size: 20rpx;
   color: var(--text-light);
 }
 
-.player-chip-score.positive,
+.player-square-score.positive,
 .leaderboard-score.positive,
 .s-score.positive {
   color: #f43f5e;
 }
 
-.player-chip-score.negative,
+.player-square-score.negative,
 .leaderboard-score.negative,
 .s-score.negative {
   color: #10b981;
 }
 
-.player-chip-action {
-  align-self: flex-end;
-  min-width: 82rpx;
-  height: 42rpx;
-  padding: 0 14rpx;
-  border-radius: 999rpx;
-  background: #eef5ff;
-  color: var(--secondary-strong);
+.player-square.active .player-square-score.positive,
+.player-square.active .player-square-score.negative {
+  color: #fff;
+}
+
+.target-hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-top: 12rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(180deg, #f7faff, #eef5ff);
+  border: 2rpx solid rgba(214, 226, 247, 0.8);
+}
+
+.target-hint-bar.active {
+  background: linear-gradient(180deg, #eef5ff, #dbeafe);
+  border-color: rgba(96, 165, 250, 0.6);
+}
+
+.target-hint-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.target-hint-label {
   font-size: 20rpx;
+  color: var(--text-light);
+}
+
+.target-hint-name {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: var(--secondary-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.target-hint-clear {
+  flex-shrink: 0;
+  padding: 12rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  font-size: 22rpx;
   font-weight: 800;
 }
 
@@ -1748,7 +2071,7 @@ onUnmounted(() => {
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 0 24rpx 12rpx;
+  padding: 0 24rpx 10rpx;
 }
 
 .feed-card {
@@ -1756,7 +2079,8 @@ onUnmounted(() => {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.72);
+  padding: 18rpx 18rpx 14rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 247, 255, 0.88));
 }
 
 .feed-head {
@@ -1764,14 +2088,14 @@ onUnmounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16rpx;
-  padding-bottom: 18rpx;
+  padding-bottom: 14rpx;
 }
 
 .card-title {
   font-size: 30rpx;
   font-weight: 900;
   color: var(--text-main);
-  margin-bottom: 6rpx;
+  margin-bottom: 4rpx;
 }
 
 .feed-subtitle {
@@ -1790,7 +2114,6 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
 .feed-scroll {
@@ -1802,8 +2125,8 @@ onUnmounted(() => {
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
-  padding-bottom: 6rpx;
+  gap: 12rpx;
+  padding-bottom: 8rpx;
 }
 
 .feed-item {
@@ -1820,19 +2143,19 @@ onUnmounted(() => {
 
 .feed-bubble {
   max-width: 88%;
-  padding: 18rpx 20rpx;
-  border-radius: 26rpx;
-  box-shadow: 0 10rpx 22rpx rgba(148, 163, 184, 0.12);
+  padding: 16rpx 18rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 18rpx rgba(148, 163, 184, 0.1);
 }
 
 .feed-item.message .feed-bubble {
-  background: rgba(255, 255, 255, 0.92);
-  border-top-left-radius: 12rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-top-left-radius: 10rpx;
 }
 
 .feed-item.score .feed-bubble {
   background: linear-gradient(180deg, #fff7fb, #ffffff);
-  border-top-right-radius: 12rpx;
+  border-top-right-radius: 10rpx;
 }
 
 .feed-item.revoked .feed-bubble {
@@ -1843,8 +2166,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
-  margin-bottom: 10rpx;
+  gap: 14rpx;
+  margin-bottom: 8rpx;
 }
 
 .feed-item-type {
@@ -1862,7 +2185,7 @@ onUnmounted(() => {
 
 .feed-item-main {
   font-size: 25rpx;
-  line-height: 1.6;
+  line-height: 1.56;
   color: var(--text-main);
 }
 
@@ -1878,10 +2201,105 @@ onUnmounted(() => {
 
 .interaction-stage {
   position: absolute;
-  inset: 84rpx 24rpx 12rpx 24rpx;
+  inset: 112rpx 24rpx 36rpx 24rpx;
   pointer-events: none;
   overflow: hidden;
-  z-index: 12;
+  z-index: 14;
+}
+
+.broadcast-stage {
+  position: absolute;
+  top: 24%;
+  left: 24rpx;
+  right: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14rpx;
+  pointer-events: none;
+  z-index: 13;
+}
+
+.broadcast-banner {
+  width: min(100%, 520rpx);
+  padding: 18rpx 24rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.94), rgba(59, 130, 246, 0.96));
+  box-shadow: 0 22rpx 40rpx rgba(37, 99, 235, 0.24);
+  color: #fff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  text-align: center;
+  animation: broadcast-pop 2.6s ease forwards;
+}
+
+.broadcast-banner.leaderboard {
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.94), rgba(147, 197, 253, 0.98));
+}
+
+.broadcast-banner.fury {
+  overflow: hidden;
+}
+
+.broadcast-banner.fury::before,
+.broadcast-banner.fury::after {
+  content: '';
+  position: absolute;
+  top: -26rpx;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 189, 89, 0.42) 0%, rgba(255, 189, 89, 0) 70%);
+  animation: fury-glow 1.2s ease-in-out infinite;
+}
+
+.broadcast-banner.fury::before {
+  left: -28rpx;
+}
+
+.broadcast-banner.fury::after {
+  right: -28rpx;
+  animation-delay: 0.25s;
+}
+
+.broadcast-banner.revoke {
+  background: linear-gradient(135deg, rgba(190, 24, 93, 0.94), rgba(244, 114, 182, 0.98));
+}
+
+.broadcast-flare-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 2rpx;
+}
+
+.broadcast-flare {
+  font-size: 34rpx;
+  line-height: 1;
+  animation: fury-bounce 0.8s ease-in-out infinite alternate;
+}
+
+.broadcast-flare:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.broadcast-flare:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.broadcast-label {
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  opacity: 0.86;
+}
+
+.broadcast-content {
+  font-size: 28rpx;
+  font-weight: 900;
+  line-height: 1.5;
 }
 
 .interaction-effect {
@@ -1890,12 +2308,21 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10rpx;
-  animation: interaction-burst 1.6s ease-out forwards;
+  gap: 12rpx;
+  animation: interaction-burst 2.2s ease-out forwards;
 }
 
 .interaction-effect.bomb {
-  animation: bomb-pop 1.6s ease-out forwards;
+  animation: bomb-pop 2.2s ease-out forwards;
+}
+
+.interaction-effect.combo .effect-main::after {
+  content: '';
+  position: absolute;
+  inset: -26rpx;
+  border-radius: 50%;
+  border: 8rpx solid rgba(96, 165, 250, 0.28);
+  animation: combo-ring 0.9s ease-out infinite;
 }
 
 .interaction-effect.bomb::before,
@@ -1922,32 +2349,72 @@ onUnmounted(() => {
 
 .effect-pulse {
   position: absolute;
-  width: 160rpx;
-  height: 160rpx;
+  width: 220rpx;
+  height: 220rpx;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.84) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0) 72%);
   z-index: -1;
 }
 
+.effect-main {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
 .effect-emoji {
-  font-size: 120rpx;
+  font-size: 148rpx;
   line-height: 1;
-  filter: drop-shadow(0 16rpx 20rpx rgba(15, 23, 42, 0.14));
+  filter: drop-shadow(0 18rpx 24rpx rgba(15, 23, 42, 0.2));
 }
 
 .interaction-effect.bomb .effect-emoji {
-  font-size: 144rpx;
+  font-size: 168rpx;
+}
+
+.effect-count {
+  position: absolute;
+  right: -42rpx;
+  top: 8rpx;
+  min-width: 74rpx;
+  height: 52rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 24rpx rgba(37, 99, 235, 0.28);
+}
+
+.effect-echo-row {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.effect-echo {
+  font-size: 32rpx;
+  line-height: 1;
 }
 
 .effect-caption {
-  max-width: 360rpx;
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.94);
+  max-width: 420rpx;
+  padding: 14rpx 22rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.96);
   color: var(--text-main);
-  font-size: 22rpx;
-  font-weight: 700;
+  font-size: 24rpx;
+  font-weight: 800;
   text-align: center;
+  line-height: 1.45;
 }
 
 @keyframes interaction-burst {
@@ -1961,11 +2428,11 @@ onUnmounted(() => {
   }
   72% {
     opacity: 1;
-    transform: translate(-50%, -62%) scale(1);
+    transform: translate(-50%, -60%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -84%) scale(0.94);
+    transform: translate(-50%, -82%) scale(0.96);
   }
 }
 
@@ -1980,11 +2447,11 @@ onUnmounted(() => {
   }
   56% {
     opacity: 1;
-    transform: translate(-50%, -58%) scale(1.02);
+    transform: translate(-50%, -56%) scale(1.04);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -80%) scale(0.92);
+    transform: translate(-50%, -78%) scale(0.94);
   }
 }
 
@@ -2018,6 +2485,57 @@ onUnmounted(() => {
   }
 }
 
+@keyframes broadcast-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(28rpx) scale(0.92);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18rpx) scale(0.98);
+  }
+}
+
+@keyframes fury-glow {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes fury-bounce {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-8rpx) scale(1.06);
+  }
+}
+
+@keyframes combo-ring {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
 .floating-dismiss {
   position: fixed;
   inset: 0;
@@ -2026,21 +2544,27 @@ onUnmounted(() => {
 
 .floating-edge-stack {
   position: fixed;
-  left: 0;
-  bottom: calc(188rpx + env(safe-area-inset-bottom));
-  display: flex;
-  align-items: flex-end;
-  gap: 12rpx;
+  right: 24rpx;
+  bottom: calc(250rpx + env(safe-area-inset-bottom));
   z-index: 50;
 }
 
+.floating-edge-launchers {
+  position: fixed;
+  right: 24rpx;
+  bottom: calc(124rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  z-index: 51;
+}
+
 .floating-edge-panel {
-  width: 430rpx;
-  margin-left: 20rpx;
+  width: 420rpx;
   padding: 18rpx;
   border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.97);
-  border: 2rpx solid rgba(255, 255, 255, 0.84);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 255, 0.96));
+  border: 2rpx solid rgba(222, 231, 246, 0.84);
   box-shadow: var(--shadow-lg);
 }
 
@@ -2062,24 +2586,14 @@ onUnmounted(() => {
   color: var(--text-sub);
 }
 
-.floating-edge-tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
-
 .floating-edge-tab {
-  width: 88rpx;
-  min-height: 120rpx;
-  padding: 0 16rpx;
-  border-radius: 0 24rpx 24rpx 0;
+  width: 92rpx;
+  min-height: 92rpx;
+  border-radius: 28rpx;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #fff;
   font-size: 24rpx;
   font-weight: 900;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 4rpx;
   box-shadow: var(--shadow-accent);
 }
 
@@ -2101,6 +2615,10 @@ onUnmounted(() => {
   border-radius: 24rpx;
   background: linear-gradient(180deg, #fff8fb, #fff1f5);
   box-shadow: inset 0 0 0 2rpx rgba(255, 255, 255, 0.6);
+}
+
+.interaction-btn:active {
+  transform: scale(0.96);
 }
 
 .interaction-emoji {
@@ -2133,13 +2651,13 @@ onUnmounted(() => {
 .bottom-wrapper {
   position: relative;
   z-index: 20;
-  padding: 0 24rpx calc(18rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.94) 18%, #fff 100%);
+  padding: 0 24rpx calc(14rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.92) 18%, #fff 100%);
   backdrop-filter: blur(18px);
 }
 
 .bottom-dock {
-  padding: 10rpx 8rpx 0;
+  padding-top: 8rpx;
 }
 
 .chat-range-bar {
@@ -2147,7 +2665,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 14rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
   padding: 0 6rpx;
 }
 
@@ -2165,21 +2683,34 @@ onUnmounted(() => {
 .chat-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 10rpx;
+}
+
+.compact-chat-row {
+  align-items: stretch;
 }
 
 .chat-input {
   flex: 1;
-  height: 88rpx;
+  min-width: 0;
+  height: 84rpx;
   border-radius: var(--radius-pill);
   font-size: 26rpx;
   background: #f4f6fa !important;
 }
 
-.chat-send-btn,
+.chat-send-btn {
+  width: 96rpx;
+  height: 84rpx;
+  border-radius: var(--radius-pill);
+  font-size: 26rpx;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
 .score-open-btn {
-  width: 132rpx;
-  height: 88rpx;
+  width: 118rpx;
+  height: 84rpx;
   border-radius: var(--radius-pill);
   font-size: 28rpx;
   font-weight: 800;
@@ -2204,6 +2735,12 @@ onUnmounted(() => {
   max-width: 640rpx;
 }
 
+.score-modal {
+  padding: 30rpx;
+  border-radius: 40rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 255, 0.96));
+}
+
 .leaderboard-modal {
   max-height: calc(100vh - 120rpx);
 }
@@ -2219,6 +2756,51 @@ onUnmounted(() => {
   font-size: 26rpx;
   color: var(--text-sub);
   margin-bottom: 28rpx;
+}
+
+.score-head-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-bottom: 22rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #f7faff, #fff4fa);
+  border: 2rpx solid rgba(225, 232, 245, 0.84);
+}
+
+.score-head-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.score-head-kicker {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  color: var(--text-light);
+}
+
+.score-modal-desc {
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.score-head-badge {
+  min-width: 112rpx;
+  height: 54rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
 .confirm-desc {
@@ -2349,7 +2931,7 @@ onUnmounted(() => {
   margin-bottom: 24rpx;
   padding: 18rpx;
   border-radius: 24rpx;
-  background: #fff8fb;
+  background: linear-gradient(180deg, #fff8fb, #fffdfd);
 }
 
 .target-picker-head {
@@ -2387,7 +2969,6 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
 .target-player-chip.active {
@@ -2403,10 +2984,33 @@ onUnmounted(() => {
   margin-bottom: 24rpx;
 }
 
+.score-shortcut-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.score-shortcut-title {
+  font-size: 24rpx;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.score-shortcut-tip {
+  font-size: 20rpx;
+  color: var(--text-light);
+}
+
+.compact-score-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .shortcut-chip {
   height: 88rpx;
-  border-radius: 24rpx;
-  background: #f5f8ff;
+  border-radius: 26rpx;
+  background: linear-gradient(180deg, #f5f8ff, #eef4ff);
   color: var(--secondary-strong);
   font-size: 34rpx;
   font-weight: 900;
@@ -2424,6 +3028,16 @@ onUnmounted(() => {
 
 .custom-row .macaron-input {
   flex: 1;
+}
+
+.score-custom-row {
+  margin-bottom: 18rpx;
+}
+
+.score-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
 }
 
 .custom-btn {
@@ -2479,9 +3093,9 @@ onUnmounted(() => {
 
 .settlement-modal {
   width: 640rpx;
-  padding: 40rpx;
-  border-radius: 40rpx;
-  background: linear-gradient(to bottom, #fff, #f8fafc);
+  padding: 36rpx;
+  border-radius: 44rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 42%, #eef4ff 100%);
   box-shadow: 0 24rpx 56rpx rgba(15, 23, 42, 0.24);
   display: flex;
   flex-direction: column;
@@ -2497,12 +3111,78 @@ onUnmounted(() => {
   font-size: 46rpx;
   font-weight: 900;
   color: #f43f5e;
-  margin-bottom: 18rpx;
+}
+
+.settlement-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 22rpx;
+}
+
+.settlement-kicker {
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+  color: var(--text-light);
+}
+
+.settlement-summary {
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: var(--text-sub);
+  text-align: center;
+}
+
+.settlement-spotlights {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-bottom: 22rpx;
+}
+
+.spotlight-card {
+  padding: 16rpx 14rpx;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  color: #fff;
+}
+
+.spotlight-card.gold {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.spotlight-card.rose {
+  background: linear-gradient(135deg, #ec4899, #fb7185);
+}
+
+.spotlight-card.blue {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.spotlight-label {
+  font-size: 20rpx;
+  opacity: 0.84;
+}
+
+.spotlight-name {
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.spotlight-meta {
+  font-size: 20rpx;
+  line-height: 1.4;
 }
 
 .s-mvp {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10rpx;
   padding: 12rpx 28rpx;
   margin-bottom: 28rpx;
@@ -2522,6 +3202,35 @@ onUnmounted(() => {
   color: #fff;
 }
 
+.mvp-tag {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.settlement-board-head {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.settlement-board-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.settlement-board-subtitle {
+  font-size: 22rpx;
+  color: var(--text-light);
+}
+
 .s-list {
   width: 100%;
   max-height: 500rpx;
@@ -2538,6 +3247,14 @@ onUnmounted(() => {
   margin-bottom: 12rpx;
 }
 
+.s-item.podium {
+  background: linear-gradient(180deg, #ffffff, #fff7e8);
+}
+
+.s-item.self {
+  border: 2rpx solid rgba(59, 130, 246, 0.2);
+}
+
 .s-rank {
   width: 48rpx;
   font-size: 30rpx;
@@ -2551,11 +3268,22 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
-.s-name {
+.s-main {
   flex: 1;
+  min-width: 0;
+}
+
+.s-name {
   font-size: 28rpx;
   font-weight: 800;
   color: var(--text-main);
+}
+
+.s-tagline {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--text-light);
 }
 
 .s-score {
@@ -2571,35 +3299,26 @@ onUnmounted(() => {
 }
 
 @media (max-width: 420px) {
-  .top-entry-grid,
-  .info-grid,
-  .shortcut-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .player-chip {
-    width: 100%;
-  }
-
-  .overview-head,
-  .target-strip,
-  .chat-row,
-  .chat-range-bar,
   .modal-actions,
   .custom-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .overview-side,
-  .target-clear-btn,
-  .chat-send-btn,
-  .score-open-btn,
   .custom-btn,
   .modal-actions .macaron-btn,
-  .notice-btn,
-  .floating-edge-panel {
+  .notice-btn {
     width: 100%;
+  }
+
+  .info-grid,
+  .shortcut-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-square {
+    width: 144rpx;
+    min-width: 144rpx;
   }
 
   .feed-bubble {
@@ -2607,28 +3326,46 @@ onUnmounted(() => {
   }
 
   .floating-edge-stack {
-    left: 12rpx;
-    right: 12rpx;
-    bottom: calc(204rpx + env(safe-area-inset-bottom));
-    flex-direction: column-reverse;
-    align-items: stretch;
+    right: 16rpx;
+    bottom: calc(228rpx + env(safe-area-inset-bottom));
   }
 
-  .floating-edge-tabs {
-    flex-direction: row;
+  .floating-edge-panel {
+    width: calc(100vw - 156rpx);
   }
 
-  .floating-edge-tab {
-    width: auto;
-    min-height: 82rpx;
-    border-radius: 999rpx;
-    writing-mode: horizontal-tb;
-    text-orientation: initial;
-    letter-spacing: 0;
+  .floating-edge-launchers {
+    right: 16rpx;
+    bottom: calc(120rpx + env(safe-area-inset-bottom));
   }
 
-  .leaderboard-item {
-    align-items: flex-start;
+  .top-entry-row {
+    gap: 8rpx;
+  }
+
+  .entry-btn {
+    min-height: 84rpx;
+    padding: 10rpx 6rpx;
+  }
+
+  .entry-name {
+    font-size: 21rpx;
+  }
+
+  .entry-desc {
+    font-size: 17rpx;
+  }
+
+  .chat-send-btn {
+    width: 88rpx;
+  }
+
+  .score-open-btn {
+    width: 106rpx;
+  }
+
+  .settlement-spotlights {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="index-page app-shell">
     <view class="macaron-card home-hero">
       <view class="hero-top">

@@ -1,0 +1,199 @@
+{
+  "tables": [
+    {
+      "tableName": "user",
+      "description": "用户表",
+      "fields": [
+        {
+          "fieldName": "_id",
+          "dataType": "String",
+          "description": "用户ID"
+        },
+        {
+          "fieldName": "uid",
+          "dataType": "String",
+          "description": "用户唯一标识",
+          "index": true
+        },
+        {
+          "fieldName": "nickName",
+          "dataType": "String",
+          "description": "用户昵称"
+        },
+        {
+          "fieldName": "avatarUrl",
+          "dataType": "String",
+          "description": "用户头像"
+        },
+        {
+          "fieldName": "createdAt",
+          "dataType": "Timestamp",
+          "description": "创建时间"
+        },
+        {
+          "fieldName": "updatedAt",
+          "dataType": "Timestamp",
+          "description": "更新时间"
+        }
+      ]
+    },
+    {
+      "tableName": "room",
+      "description": "房间表",
+      "fields": [
+        {
+          "fieldName": "_id",
+          "dataType": "String",
+          "description": "房间ID"
+        },
+        {
+          "fieldName": "roomId",
+          "dataType": "String",
+          "description": "房间号",
+          "index": true
+        },
+        {
+          "fieldName": "creator",
+          "dataType": "String",
+          "description": "创建者ID"
+        },
+        {
+          "fieldName": "status",
+          "dataType": "String",
+          "description": "房间状态(active/closed)"
+        },
+        {
+          "fieldName": "createdAt",
+          "dataType": "Timestamp",
+          "description": "创建时间"
+        },
+        {
+          "fieldName": "updatedAt",
+          "dataType": "Timestamp",
+          "description": "更新时间"
+        }
+      ]
+    },
+    {
+      "tableName": "player",
+      "description": "玩家表",
+      "fields": [
+        {
+          "fieldName": "_id",
+          "dataType": "String",
+          "description": "玩家记录ID"
+        },
+        {
+          "fieldName": "roomId",
+          "dataType": "String",
+          "description": "房间号",
+          "index": true
+        },
+        {
+          "fieldName": "userId",
+          "dataType": "String",
+          "description": "用户ID"
+        },
+        {
+          "fieldName": "name",
+          "dataType": "String",
+          "description": "玩家名称"
+        },
+        {
+          "fieldName": "avatar",
+          "dataType": "String",
+          "description": "玩家头像"
+        },
+        {
+          "fieldName": "score",
+          "dataType": "Number",
+          "description": "玩家分数"
+        },
+        {
+          "fieldName": "createdAt",
+          "dataType": "Timestamp",
+          "description": "创建时间"
+        },
+        {
+          "fieldName": "updatedAt",
+          "dataType": "Timestamp",
+          "description": "更新时间"
+        }
+      ]
+    },
+    {
+      "tableName": "scoreHistory",
+      "description": "分数历史表",
+      "fields": [
+        {
+          "fieldName": "_id",
+          "dataType": "String",
+          "description": "记录ID"
+        },
+        {
+          "fieldName": "roomId",
+          "dataType": "String",
+          "description": "房间号",
+          "index": true
+        },
+        {
+          "fieldName": "fromUserId",
+          "dataType": "String",
+          "description": "扣分用户ID"
+        },
+        {
+          "fieldName": "toUserId",
+          "dataType": "String",
+          "description": "加分用户ID"
+        },
+        {
+          "fieldName": "score",
+          "dataType": "Number",
+          "description": "分数"
+        },
+        {
+          "fieldName": "timestamp",
+          "dataType": "Timestamp",
+          "description": "时间戳"
+        }
+      ]
+    },
+    {
+      "tableName": "message",
+      "description": "消息表",
+      "fields": [
+        {
+          "fieldName": "_id",
+          "dataType": "String",
+          "description": "消息ID"
+        },
+        {
+          "fieldName": "roomId",
+          "dataType": "String",
+          "description": "房间号",
+          "index": true
+        },
+        {
+          "fieldName": "userId",
+          "dataType": "String",
+          "description": "发送者ID"
+        },
+        {
+          "fieldName": "content",
+          "dataType": "String",
+          "description": "消息内容"
+        },
+        {
+          "fieldName": "type",
+          "dataType": "String",
+          "description": "消息类型(user/system)"
+        },
+        {
+          "fieldName": "timestamp",
+          "dataType": "Timestamp",
+          "description": "时间戳"
+        }
+      ]
+    }
+  ]
+}

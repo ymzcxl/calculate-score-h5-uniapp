@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="history-page app-shell">
     <view class="page-nav">
       <view class="nav-btn nav-pill" @click="goBack">
