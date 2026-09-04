@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import App from './App.vue'
 import uviewPlus from 'uview-plus'
 import './uni.promisify.adaptor'
+import './styles/global.scss'
 
 import LoginPage from './pages/login/login.vue'
 import ForgotPasswordPage from './pages/login/forgot-password.vue'

@@ -1,18 +1,29 @@
 <template>
   <view class="history-page app-shell">
     <view class="page-nav">
-      <view class="nav-btn" @click="goBack">← 返回</view>
+      <view class="nav-btn nav-pill" @click="goBack">
+        <text class="nav-icon">←</text>
+        <text>返回</text>
+      </view>
       <view class="nav-title">
         <text class="title-text">历史战绩</text>
         <text class="sub-text">回看每一局的结果和你的走势</text>
       </view>
-      <view class="nav-btn right" @click="goToHome">首页</view>
+      <view class="nav-btn nav-pill right" @click="goToHome">首页</view>
     </view>
 
     <view class="macaron-card summary-card">
       <view class="card-title">
         📈 生涯概览
         <text class="macaron-badge blue" style="margin-left:auto">{{ archiveStatusText }}</text>
+      </view>
+
+      <view class="summary-banner">
+        <view class="banner-copy">
+          <text class="banner-title">最近这段时间，你的牌桌状态 {{ archiveStatusText === '已同步' ? '已经更新' : '等待开局' }}</text>
+          <text class="banner-sub">历史会自动记录每桌结果、排名和同桌信息，方便你回看走势。</text>
+        </view>
+        <view class="banner-pill">{{ latestResultText }}</view>
       </view>
       
       <view class="summary-grid">
@@ -229,8 +240,67 @@ onMounted(loadData);
   flex-direction: column;
 }
 
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  line-height: 1;
+}
+
+.nav-icon {
+  font-size: 26rpx;
+  line-height: 1;
+}
+
 .summary-card {
   background: var(--card-bg-accent);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.summary-banner {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 24rpx;
+  padding: 22rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.74);
+}
+
+.banner-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.banner-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--text-sub);
+}
+
+.banner-pill {
+  flex-shrink: 0;
+  min-height: 72rpx;
+  padding: 0 22rpx;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, rgba(95, 140, 255, 0.14), rgba(255, 140, 171, 0.16));
+  color: var(--primary-strong);
+  font-size: 22rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .summary-grid {
@@ -298,6 +368,10 @@ onMounted(loadData);
   min-height: 60rpx;
   padding: 0 24rpx;
   font-size: 24rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .record-list {
@@ -311,7 +385,8 @@ onMounted(loadData);
   border-radius: var(--radius-md);
   padding: 24rpx;
   border: 2rpx solid var(--divider);
-  transition: transform 0.18s ease;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
 .record-item:active {
@@ -434,5 +509,19 @@ onMounted(loadData);
 .empty-btn {
   margin-top: 40rpx;
   width: 300rpx;
+}
+
+@media (max-width: 380px) {
+  .summary-banner,
+  .insight-row,
+  .r-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .r-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 </style>

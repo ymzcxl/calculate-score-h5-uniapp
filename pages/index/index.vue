@@ -10,7 +10,7 @@
               <text class="macaron-badge yellow" v-if="userInfo.phone">{{ userInfo.phone }}</text>
               <text class="macaron-badge blue" v-else>未绑定手机</text>
             </view>
-            <text class="hero-caption">熟人局记分 · 小程序风操作体验</text>
+            <text class="hero-caption">随时开桌，随手记分，牌局节奏不断线</text>
           </view>
         </view>
         <button class="setting-btn" @click="settingsPopup = true">设置</button>
@@ -42,10 +42,10 @@
     </view>
 
     <view class="action-grid">
-      <view class="action-card create-box" @click="createRoom">
+      <view class="action-card create-box" @click="openCreateRoomPopup">
         <view class="action-icon">🎲</view>
         <text class="action-title">创建房间</text>
-        <text class="action-desc">你当房主，直接拉人开打</text>
+        <text class="action-desc">先起个房间名，再拉朋友开打</text>
         <view class="action-chip">推荐从这里开始</view>
       </view>
       
@@ -105,22 +105,86 @@
       </view>
     </view>
 
-    <view class="macaron-card helper-card">
-      <view class="card-title">
-        <text class="icon">💡</text> 使用提示
+    <view v-if="createRoomPopup" class="modal-mask" @click="createRoomPopup = false">
+      <view class="macaron-card modal-panel create-room-panel" @click.stop>
+        <view class="modal-title">创建房间</view>
+        <view class="modal-desc">给这一桌牌局起个名字，朋友进房后更容易认出来。</view>
+        <view class="input-group create-room-group">
+          <input
+            v-model.trim="roomTitleInput"
+            class="macaron-input"
+            placeholder="例如：今晚欢乐局"
+            maxlength="18"
+            confirm-type="done"
+            @confirm="createRoom"
+          />
+          <view class="title-helper">
+            <text class="helper-main">留空会自动使用 {{ fallbackRoomTitle }}</text>
+            <text class="helper-count">{{ roomTitleLength }}/18</text>
+          </view>
+          <view class="title-suggestions">
+            <view
+              v-for="item in roomTitleSuggestions"
+              :key="item"
+              class="title-suggestion"
+              @click="applySuggestedTitle(item)"
+            >
+              {{ item }}
+            </view>
+          </view>
+        </view>
+        <view class="modal-actions">
+          <button class="macaron-btn ghost" @click="createRoomPopup = false">取消</button>
+          <button class="macaron-btn" @click="createRoom">确认创建</button>
+        </view>
       </view>
-      <view class="helper-list">
-        <view class="helper-item">
-          <text class="helper-index">01</text>
-          <text class="helper-text">先创建房间，再把链接或房间号发给朋友。</text>
+    </view>
+
+    <view v-if="helpPopup" class="modal-mask" @click="helpPopup = false">
+      <view class="macaron-card modal-panel helper-modal" @click.stop>
+        <view class="modal-title">如何使用</view>
+        <view class="helper-list">
+          <view class="helper-item">
+            <text class="helper-index">01</text>
+            <text class="helper-text">先创建房间，再把链接或房间号发给朋友。</text>
+          </view>
+          <view class="helper-item">
+            <text class="helper-index">02</text>
+            <text class="helper-text">如果你上次的牌局还没结束，首页会先提醒你回到上一局。</text>
+          </view>
+          <view class="helper-item">
+            <text class="helper-index">03</text>
+            <text class="helper-text">房主可以先结束上一局，再重新开一桌新牌局。</text>
+          </view>
         </view>
-        <view class="helper-item">
-          <text class="helper-index">02</text>
-          <text class="helper-text">关闭 H5 后重新进入，首页会优先提示正在进行的牌局。</text>
+        <view class="modal-actions">
+          <button class="macaron-btn" @click="helpPopup = false">知道了</button>
         </view>
-        <view class="helper-item">
-          <text class="helper-index">03</text>
-          <text class="helper-text">房主可在首页直接结束未结算牌局，历史会自动同步。</text>
+      </view>
+    </view>
+
+    <view v-if="activeRoomConflictPopup" class="modal-mask" @click="closeActiveRoomConflict">
+      <view class="macaron-card modal-panel" @click.stop>
+        <view class="modal-title">上一局还没结束</view>
+        <view class="modal-desc">
+          你当前还有一桌进行中的牌局（{{ activeRoomId }}）。先回去继续，或者处理完上一局再新开。
+        </view>
+        <view class="conflict-actions">
+          <button class="macaron-btn ghost" @click="returnToExistingRoom">回到上一局</button>
+          <button
+            v-if="activeRoomIsCreator"
+            class="macaron-btn"
+            @click="endActiveRoomAndCreate"
+          >
+            结束上一局后新开
+          </button>
+          <button
+            v-else
+            class="macaron-btn"
+            @click="leaveActiveRoomAndCreate"
+          >
+            退出上一局后新开
+          </button>
         </view>
       </view>
     </view>
@@ -217,6 +281,11 @@
       </view>
     </view>
 
+    <view class="help-fab" @click="helpPopup = true">
+      <text class="help-fab-icon">?</text>
+      <text class="help-fab-text">如何使用</text>
+    </view>
+
   </view>
 </template>
 
@@ -246,8 +315,12 @@ const stats = ref({
 
 const joinPopup = ref(false);
 const joinInput = ref('');
+const createRoomPopup = ref(false);
+const roomTitleInput = ref('');
 const activeRoomId = ref('');
 const activeRoomIsCreator = ref(false);
+const activeRoomConflictPopup = ref(false);
+const helpPopup = ref(false);
 const settingsPopup = ref(false);
 const nicknamePopup = ref(false);
 const newNickname = ref('');
@@ -306,6 +379,25 @@ const dashboardSubtitle = computed(() => {
     return '还没有记录呢，快拉上朋友开一局吧~';
   }
   return `已经玩了 ${stats.value.totalGames} 局，继续保持节奏！`;
+});
+
+const sanitizeRoomTitle = (value = '') => value.replace(/\s+/g, ' ').trim().slice(0, 18);
+
+const fallbackRoomTitle = computed(() => {
+  const nickName = sanitizeRoomTitle(userInfo.value.nickName || '');
+  return nickName ? `${nickName}的牌局` : '好友牌局';
+});
+
+const roomTitleLength = computed(() => sanitizeRoomTitle(roomTitleInput.value).length);
+
+const roomTitleSuggestions = computed(() => {
+  const suggestions = [
+    fallbackRoomTitle.value,
+    '今晚欢乐局',
+    '手气回升局'
+  ];
+
+  return [...new Set(suggestions.filter(Boolean))].slice(0, 3);
 });
 
 const rhythmCopy = computed(() => {
@@ -403,11 +495,74 @@ const quickEndRoom = () => {
   }, true);
 };
 
+const openCreateRoomPopup = () => {
+  if (!requireAuth()) return;
+  if (activeRoomId.value) {
+    activeRoomConflictPopup.value = true;
+    return;
+  }
+  roomTitleInput.value = fallbackRoomTitle.value;
+  createRoomPopup.value = true;
+};
+
+const closeActiveRoomConflict = () => {
+  activeRoomConflictPopup.value = false;
+};
+
+const returnToExistingRoom = () => {
+  closeActiveRoomConflict();
+  returnToActiveRoom();
+};
+
+const leaveActiveRoomAndCreate = async () => {
+  if (!activeRoomId.value) return;
+  try {
+    uni.showLoading({ title: '正在处理上一局...' });
+    await api.exitRoom({ roomId: activeRoomId.value });
+    activeRoomId.value = '';
+    activeRoomIsCreator.value = false;
+    closeActiveRoomConflict();
+    roomTitleInput.value = fallbackRoomTitle.value;
+    createRoomPopup.value = true;
+  } catch (error) {
+    uni.showToast({ title: error.message || '处理失败', icon: 'none' });
+  } finally {
+    uni.hideLoading();
+  }
+};
+
+const endActiveRoomAndCreate = async () => {
+  if (!activeRoomId.value) return;
+  try {
+    uni.showLoading({ title: '正在结束上一局...' });
+    await api.settleRoom({ roomId: activeRoomId.value });
+    activeRoomId.value = '';
+    activeRoomIsCreator.value = false;
+    closeActiveRoomConflict();
+    roomTitleInput.value = fallbackRoomTitle.value;
+    createRoomPopup.value = true;
+    await loadDashboard();
+  } catch (error) {
+    uni.showToast({ title: error.message || '处理失败', icon: 'none' });
+  } finally {
+    uni.hideLoading();
+  }
+};
+
+const applySuggestedTitle = (title) => {
+  roomTitleInput.value = sanitizeRoomTitle(title);
+};
+
 const createRoom = async () => {
   if (!requireAuth()) return;
   try {
     uni.showLoading({ title: '正在建房...' });
-    const room = await api.createRoom({});
+    const title = sanitizeRoomTitle(roomTitleInput.value) || fallbackRoomTitle.value;
+    const room = await api.createRoom({
+      title,
+      roomName: title
+    });
+    createRoomPopup.value = false;
     navigateToPage(getRoomPageUrl(room.roomId, true));
   } catch (error) {
     uni.showToast({ title: error.message || '创建失败', icon: 'none' });
@@ -531,6 +686,7 @@ onShow(loadDashboard);
 .home-hero {
   padding: 30rpx;
   background: var(--card-bg-accent);
+  border-color: rgba(255, 255, 255, 0.78);
 }
 
 .hero-top {
@@ -579,6 +735,7 @@ onShow(loadDashboard);
   margin-top: 10rpx;
   font-size: 24rpx;
   color: var(--text-sub);
+  line-height: 1.5;
 }
 
 .setting-btn {
@@ -675,11 +832,21 @@ onShow(loadDashboard);
   gap: 12rpx;
   padding: 30rpx 26rpx;
   border-radius: var(--radius-lg);
-  transition: transform 0.18s ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .action-card:active {
   transform: translateY(4rpx);
+}
+
+.action-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 
 .create-box {
@@ -736,6 +903,7 @@ onShow(loadDashboard);
   padding: 28rpx;
   margin-bottom: 28rpx;
   background: linear-gradient(135deg, rgba(255, 140, 171, 0.11), rgba(255, 204, 106, 0.14) 72%, rgba(255, 255, 255, 0.92));
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 .active-content {
@@ -834,6 +1002,7 @@ onShow(loadDashboard);
 }
 
 .rhythm-box {
+  margin-top: 24rpx;
   padding: 24rpx;
   display: flex;
   align-items: center;
@@ -852,10 +1021,6 @@ onShow(loadDashboard);
   font-size: 24rpx;
   color: var(--text-sub);
   margin-top: 8rpx;
-}
-
-.helper-card {
-  margin-bottom: 0;
 }
 
 .helper-list {
@@ -955,7 +1120,131 @@ onShow(loadDashboard);
   margin-top: 6rpx;
 }
 .setting-arrow {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 22rpx;
+  background: rgba(244, 247, 255, 0.95);
   color: var(--text-light);
-  font-weight: bold;
+  font-size: 38rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-room-panel {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.create-room-group {
+  gap: 14rpx;
+}
+
+.title-helper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.helper-main,
+.helper-count {
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.helper-count {
+  font-weight: 800;
+  color: var(--primary-strong);
+}
+
+.title-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.title-suggestion {
+  min-height: 60rpx;
+  padding: 0 20rpx;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.82);
+  border: 2rpx solid var(--divider);
+  color: var(--primary-strong);
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.helper-modal {
+  max-width: 660rpx;
+}
+
+.conflict-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.help-fab {
+  position: fixed;
+  right: 28rpx;
+  bottom: calc(32rpx + env(safe-area-inset-bottom));
+  min-width: 148rpx;
+  height: 88rpx;
+  padding: 0 22rpx 0 18rpx;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-md);
+  border: 2rpx solid rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  z-index: 45;
+}
+
+.help-fab-icon {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 28rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.help-fab-text {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+@media (max-width: 380px) {
+  .hero-body,
+  .active-room-card {
+    flex-direction: column;
+  }
+
+  .hero-mini-stats {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .active-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .help-fab {
+    min-width: 132rpx;
+    height: 78rpx;
+    padding: 0 18rpx 0 14rpx;
+  }
 }
 </style>

@@ -20,6 +20,21 @@
         <text class="hero-pill pink">实时同步</text>
         <text class="hero-pill mint">H5 即开即用</text>
       </view>
+
+      <view class="hero-glance">
+        <view class="glance-item">
+          <text class="glance-k">开局</text>
+          <text class="glance-v">1 步进房</text>
+        </view>
+        <view class="glance-item">
+          <text class="glance-k">同步</text>
+          <text class="glance-v">全桌实时更新</text>
+        </view>
+        <view class="glance-item">
+          <text class="glance-k">记录</text>
+          <text class="glance-v">历史自动沉淀</text>
+        </view>
+      </view>
     </view>
 
     <view class="macaron-card auth-card">
@@ -372,6 +387,35 @@ onMounted(() => {
   gap: 12rpx;
 }
 
+.hero-glance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.glance-item {
+  padding: 18rpx 16rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.66);
+  border: 2rpx solid rgba(255, 255, 255, 0.58);
+  box-shadow: var(--shadow-xs);
+}
+
+.glance-k {
+  display: block;
+  font-size: 20rpx;
+  color: var(--text-light);
+}
+
+.glance-v {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
 .hero-pill {
   padding: 10rpx 20rpx;
   border-radius: var(--radius-pill);
@@ -398,6 +442,7 @@ onMounted(() => {
   z-index: 1;
   padding: 30rpx;
   background: var(--card-bg-accent);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 .mode-switch {
@@ -499,6 +544,11 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   border: 2rpx solid rgba(255, 255, 255, 0.7);
   box-shadow: var(--shadow-xs);
+}
+
+.field-card:focus-within {
+  border-color: rgba(95, 140, 255, 0.26);
+  box-shadow: 0 0 0 8rpx rgba(95, 140, 255, 0.08);
 }
 
 .field-label {
@@ -613,5 +663,12 @@ onMounted(() => {
   font-size: 24rpx;
   font-weight: 700;
   color: var(--text-main);
+}
+
+@media (max-width: 380px) {
+  .hero-glance,
+  .panel-foot {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

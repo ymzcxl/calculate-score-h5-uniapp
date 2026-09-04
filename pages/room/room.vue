@@ -13,7 +13,7 @@
     </view>
 
     <view class="macaron-card top-function-card">
-      <view class="function-main">
+      <view class="function-main compact">
         <view class="room-identity">
           <view class="room-code-row">
             <text class="room-code-label">房间号</text>
@@ -24,38 +24,46 @@
             <text class="meta-chip accent">{{ roomStatusText }}</text>
             <text class="meta-chip">{{ roomRoleText }}</text>
             <text class="meta-chip">{{ playerCount }} 人在线</text>
+            <text class="meta-chip">播报 {{ messageCount }} 条</text>
           </view>
         </view>
-        <view class="function-actions">
-          <view class="top-action-btn share-btn" @click="copyShareLink">
+        <view class="function-actions compact">
+          <view class="top-action-btn share-btn compact" @click="copyShareLink">
             <text class="action-icon">🔗</text>
             <text class="action-text">邀请</text>
           </view>
-          <view class="top-action-btn settings-btn" @click="moreActionsPopup = true">
+          <view class="top-action-btn settings-btn compact" @click="moreActionsPopup = true">
             <text class="action-icon">⚙️</text>
             <text class="action-text">设置</text>
           </view>
         </view>
       </view>
 
-      <view class="summary-grid">
-        <view class="summary-item">
-          <text class="summary-label">当前领先</text>
+      <view class="summary-strip">
+        <view class="summary-pill">
+          <text class="summary-label">领先</text>
           <text class="summary-value">{{ leaderPlayer ? leaderPlayer.name : '暂无' }}</text>
         </view>
-        <view class="summary-item">
+        <view class="summary-pill">
           <text class="summary-label">我的分数</text>
           <text class="summary-value" :class="{ positive: (currentPlayer?.score || 0) > 0, negative: (currentPlayer?.score || 0) < 0 }">
             {{ formatScore(currentPlayer?.score || 0) }}
           </text>
         </view>
-        <view class="summary-item">
-          <text class="summary-label">当前目标</text>
-          <text class="summary-value">{{ selectedTargetName || '未选择' }}</text>
+      </view>
+
+      <view class="target-context-bar slim">
+        <view class="target-context-main">
+          <text class="target-context-label">消息是否指定人员</text>
+          <text class="target-context-value">{{ currentAudienceHint }}</text>
         </view>
-        <view class="summary-item">
-          <text class="summary-label">房间播报</text>
-          <text class="summary-value">{{ messageCount }} 条</text>
+        <view
+          v-if="roomInfo.status === 'active'"
+          class="target-clear-btn"
+          :class="{ disabled: !selectedTargetId }"
+          @click="clearSelectedTarget"
+        >
+          全部人员
         </view>
       </view>
     </view>
@@ -63,40 +71,51 @@
     <view class="player-list-section">
       <view class="section-head">
         <text class="section-title">玩家列表</text>
-        <text class="section-subtitle">点击头像可切换记分或互动目标</text>
+        <text class="section-subtitle">{{ currentAudienceShortText }}</text>
       </view>
-      <scroll-view class="player-scroll" scroll-x show-scrollbar="false">
-        <view class="player-strip">
+      <view class="player-grid">
+        <view
+          class="player-card all-room-card"
+          :class="{ active: !selectedTargetId }"
+          @click="clearSelectedTarget"
+        >
+          <view class="player-card-head all-room-card-head">
+            <text class="all-room-icon">🌐</text>
+            <text class="player-tag target-tag">全部</text>
+          </view>
+          <text class="player-name">全部人员</text>
+          <text class="player-score neutral">消息和互动广播</text>
+        </view>
+
+        <view
+          v-for="player in players"
+          :key="player.userId"
+          class="player-card"
+          :class="{
+            active: selectedTargetId === player.userId,
+            self: player.userId === currentUserId
+          }"
+          @click="selectTarget(player.userId)"
+        >
+          <view class="player-card-head">
+            <image class="player-avatar" :src="player.avatar || defaultAvatar" mode="aspectFill" />
+            <text v-if="player.userId === currentUserId" class="player-tag self-tag">我</text>
+            <text v-else-if="leaderPlayer && leaderPlayer.userId === player.userId" class="player-tag leader-tag">领先</text>
+            <text v-if="selectedTargetId === player.userId" class="player-tag target-tag">指定</text>
+          </view>
+          <text class="player-name">{{ player.name }}</text>
+          <text class="player-score" :class="{ positive: player.score > 0, negative: player.score < 0 }">
+            {{ formatScore(player.score) }}
+          </text>
           <view
-            v-for="player in players"
-            :key="player.userId"
-            class="player-card"
-            :class="{
-              active: selectedTargetId === player.userId,
-              self: player.userId === currentUserId
-            }"
-            @click="selectTarget(player.userId)"
+            v-if="player.userId !== currentUserId && roomInfo.status === 'active'"
+            class="player-card-action"
+            @click.stop="handleTakeover(player)"
           >
-            <view class="player-card-head">
-              <image class="player-avatar" :src="player.avatar || defaultAvatar" mode="aspectFill" />
-              <text v-if="player.userId === currentUserId" class="player-tag self-tag">我</text>
-              <text v-else-if="leaderPlayer && leaderPlayer.userId === player.userId" class="player-tag leader-tag">领先</text>
-              <text v-if="selectedTargetId === player.userId" class="player-tag target-tag">目标</text>
-            </view>
-            <text class="player-name">{{ player.name }}</text>
-            <text class="player-score" :class="{ positive: player.score > 0, negative: player.score < 0 }">
-              {{ formatScore(player.score) }}
-            </text>
-            <view
-              v-if="player.userId !== currentUserId && roomInfo.status === 'active'"
-              class="player-card-action"
-              @click.stop="handleTakeover(player)"
-            >
-              接管
-            </view>
+            接管
           </view>
         </view>
-      </scroll-view>
+      </view>
     </view>
 
     <view class="flow-stage-wrap">
@@ -113,8 +132,9 @@
           <view v-if="recentMessages.length" class="broadcast-list">
             <view v-for="item in recentMessages" :key="item.id" class="broadcast-item">
               <view class="broadcast-main">
-                <text class="broadcast-name">{{ item.userName }}</text>
-                <text class="broadcast-content">{{ item.content }}</text>
+                <text class="broadcast-content">
+                  <text class="broadcast-prefix">{{ getMessageAudienceText(item) }}</text>{{ item.content }}
+                </text>
               </view>
               <text class="broadcast-time">{{ formatTime(item.timestamp) }}</text>
             </view>
@@ -140,6 +160,7 @@
           v-for="effect in interactionEffects"
           :key="effect.id"
           class="interaction-effect"
+          :class="{ bomb: effect.kind === '炸弹' }"
           :style="{ left: effect.left, top: effect.top }"
         >
           <text class="effect-emoji">{{ effect.emoji }}</text>
@@ -149,35 +170,16 @@
     </view>
 
     <view class="bottom-wrapper">
-      <view class="sub-bottom-interactions">
-        <view class="interaction-panel">
-          <view class="interaction-head">
-            <text class="interaction-title">快捷互动</text>
-            <text class="interaction-target">{{ selectedTargetName ? `目标：${selectedTargetName}` : '未选目标时默认全房播报' }}</text>
-          </view>
-          <view class="interaction-list">
-            <view v-for="item in interactionTools" :key="item.emoji" class="interaction-btn" @click="sendInteraction(item)">
-              <text class="interaction-emoji">{{ item.emoji }}</text>
-              <text class="interaction-name">{{ item.name }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
       <view class="bottom-dock">
-        <scroll-view class="quick-message-strip" scroll-x show-scrollbar="false">
-          <view class="quick-message-list">
-            <view v-for="item in quickMessages" :key="item" class="quick-message-chip" @click="sendQuickReaction(item)">
-              {{ item }}
-            </view>
-          </view>
-        </scroll-view>
-
+        <view class="chat-range-bar">
+          <text class="chat-range-label">当前发送范围</text>
+          <text class="chat-range-value">{{ currentAudienceHint }}</text>
+        </view>
         <view class="chat-row">
           <input
             v-model.trim="message"
             class="macaron-input chat-input"
-            placeholder="发个消息..."
+            :placeholder="messagePlaceholder"
             @confirm="sendMessage()"
             confirm-type="send"
           />
@@ -187,11 +189,64 @@
       </view>
     </view>
 
+    <view class="floating-action-stack">
+      <view v-if="floatingPanelVisible" class="floating-panel">
+        <view class="floating-panel-head">
+          <text class="floating-title">{{ floatingPanelMode === 'interaction' ? '快捷互动' : '快捷消息' }}</text>
+          <text class="floating-subtitle">{{ currentAudienceHint }}</text>
+        </view>
+        <view v-if="floatingPanelMode === 'interaction'" class="interaction-list floating-list">
+          <view v-for="item in interactionTools" :key="item.emoji" class="interaction-btn" @click="sendInteraction(item)">
+            <text class="interaction-emoji">{{ item.emoji }}</text>
+            <text class="interaction-name">{{ item.name }}</text>
+          </view>
+        </view>
+        <view v-else class="quick-message-list floating-chips">
+          <view v-for="item in quickMessages" :key="item" class="quick-message-chip" @click="sendQuickReaction(item)">
+            {{ item }}
+          </view>
+        </view>
+      </view>
+
+      <view class="floating-fab secondary" @click="toggleFloatingPanel('message')">
+        快捷话术
+      </view>
+      <view class="floating-fab" @click="toggleFloatingPanel('interaction')">
+        快捷互动
+      </view>
+    </view>
+
     <view v-if="scoreModalVisible" class="modal-mask" @click="scoreModalVisible = false">
       <view class="macaron-card modal-panel score-modal" @click.stop>
         <view class="modal-title">计分</view>
         <view class="modal-desc">
-          当前选中：<text class="highlight">{{ selectedTargetName || '请先在玩家列表选择目标' }}</text>
+          从 <text class="highlight">{{ currentPlayerName }}</text> 记给
+          <text class="highlight">{{ selectedTargetName || '请选择目标玩家' }}</text>
+        </view>
+
+        <view class="target-picker">
+          <view class="target-picker-head">
+            <text class="target-picker-title">在弹窗里选择目标</text>
+            <text class="target-picker-tip">页面外和弹窗内共用同一个目标状态</text>
+          </view>
+          <view class="target-picker-list">
+            <view
+              class="target-player-chip room-chip"
+              :class="{ active: !selectedTargetId }"
+              @click="clearSelectedTarget"
+            >
+              暂不选择
+            </view>
+            <view
+              v-for="player in scoreTargetPlayers"
+              :key="player.userId"
+              class="target-player-chip"
+              :class="{ active: selectedTargetId === player.userId }"
+              @click="selectTarget(player.userId)"
+            >
+              {{ player.name }}
+            </view>
+          </view>
         </view>
 
         <view class="shortcut-grid">
@@ -223,7 +278,7 @@
             <text class="st-title">刷新房间状态</text>
           </view>
           <view v-if="roomInfo.status === 'active'" class="setting-item" @click="revokeLastScore">
-            <text class="st-title">撤回上一笔记分</text>
+            <text class="st-title">申请撤回上一笔</text>
           </view>
           <view class="setting-item" @click="openEditName">
             <text class="st-title">修改房间昵称</text>
@@ -330,6 +385,8 @@ const topToastMessage = ref('');
 const interactionEffects = ref([]);
 const editName = ref('');
 const settlementData = ref(null);
+const floatingPanelVisible = ref(false);
+const floatingPanelMode = ref('interaction');
 const seenInteractionIds = new Set();
 let topToastTimer = null;
 
@@ -374,12 +431,21 @@ const orderedPlayers = computed(() => [...players.value].sort((a, b) => b.score 
 const leaderPlayer = computed(() => orderedPlayers.value[0] || null);
 const selectedTarget = computed(() => players.value.find(item => item.userId === selectedTargetId.value) || null);
 const selectedTargetName = computed(() => selectedTarget.value?.name || '');
+const scoreTargetPlayers = computed(() => players.value.filter(item => item.userId !== currentUserId.value));
 const roomStatusText = computed(() => (roomInfo.value.status === 'active' ? '进行中' : '已结束'));
 const roomRoleText = computed(() => (isRoomCreator.value ? '房主' : '玩家'));
 const scoreLogCount = computed(() => scoreHistory.value.filter(item => !item.isRevoked).length);
 const messageCount = computed(() => messages.value.length);
 const playerCount = computed(() => players.value.length);
-const recentMessages = computed(() => messages.value.slice(0, 3));
+const recentMessages = computed(() => messages.value.slice(0, 6));
+const currentAudienceShortText = computed(() => (selectedTargetName.value ? `指定对象｜${selectedTargetName.value}` : '全部人员'));
+const currentAudienceHint = computed(() => {
+  if (roomInfo.value.status !== 'active') {
+    return '牌局已结束，仅查看记录';
+  }
+  return selectedTargetName.value ? `指定对象｜${selectedTargetName.value}` : '全部人员｜房间内所有人';
+});
+const messagePlaceholder = computed(() => (selectedTargetName.value ? `对 ${selectedTargetName.value} 说点什么...` : '对全部人员说点什么...'));
 
 const resolveRoomIdFromUrl = () => {
   const pages = getCurrentPages();
@@ -419,16 +485,39 @@ const getScoreText = (item) => {
 
 const getScoreDetailText = (item) => {
   if (item.isRevoked) return '这笔记分已撤回';
+  if (item.revokeRequestStatus === 'pending') {
+    const requester = getPlayerName(item.revokeRequestedBy, '相关玩家');
+    const approver = getPlayerName(item.toUserId, '目标玩家');
+    return `${requester} 发起了撤回申请，等待 ${approver} 确认`;
+  }
   return `记分后比分：${formatScore(item.fromUserScoreAfter)} / ${formatScore(item.toUserScoreAfter)}`;
 };
 
 const appendSystemMessage = (content) => {
   messages.value.unshift({
     id: `local_${Date.now()}`,
+    userId: '',
     userName: '系统',
     content,
+    targetUserId: '',
+    targetScope: 'room',
     timestamp: new Date().toISOString()
   });
+};
+
+const getPlayerName = (userId, fallback = '玩家') => {
+  if (!userId) {
+    return fallback;
+  }
+  return players.value.find(item => item.userId === userId)?.name || fallback;
+};
+
+const getMessageAudienceText = (item) => {
+  const speaker = item?.userName || getPlayerName(item?.userId, '玩家');
+  if (!item?.targetUserId) {
+    return `${speaker}对全部人员说：`;
+  }
+  return `${speaker}对${getPlayerName(item.targetUserId, '目标玩家')}说：`;
 };
 
 const showTopToast = (msg) => {
@@ -469,13 +558,14 @@ const syncRoom = async () => {
     userId: item.userId,
     userName: item.userName,
     content: item.content,
+    targetUserId: item.targetUserId || '',
+    targetScope: item.targetScope || (item.targetUserId ? 'player' : 'room'),
     timestamp: item.timestamp
   }));
 
   const hasTarget = players.value.some(item => item.userId === selectedTargetId.value && item.userId !== currentUserId.value);
   if (!hasTarget || roomInfo.value.status !== 'active') {
-    const defaultTarget = players.value.find(item => item.userId !== currentUserId.value);
-    selectedTargetId.value = roomInfo.value.status === 'active' ? (defaultTarget?.userId || '') : '';
+    selectedTargetId.value = '';
   }
 };
 
@@ -488,9 +578,33 @@ const refreshRoom = async () => {
   }
 };
 
+const toggleFloatingPanel = (mode) => {
+  if (roomInfo.value.status !== 'active') {
+    uni.showToast({ title: '牌局已结束', icon: 'none' });
+    return;
+  }
+  if (floatingPanelVisible.value && floatingPanelMode.value === mode) {
+    floatingPanelVisible.value = false;
+    return;
+  }
+  floatingPanelMode.value = mode;
+  floatingPanelVisible.value = true;
+};
+
 const selectTarget = (userId) => {
   if (roomInfo.value.status !== 'active' || userId === currentUserId.value) return;
+  if (selectedTargetId.value === userId) {
+    selectedTargetId.value = '';
+    return;
+  }
   selectedTargetId.value = userId;
+};
+
+const clearSelectedTarget = () => {
+  if (roomInfo.value.status !== 'active') {
+    return;
+  }
+  selectedTargetId.value = '';
 };
 
 const handleTakeover = (player) => {
@@ -507,7 +621,7 @@ const handleTakeover = (player) => {
 
 const updateScore = async (score) => {
   if (!selectedTargetId.value) {
-    uni.showToast({ title: '请先选择一位玩家', icon: 'none' });
+    uni.showToast({ title: '请先选择记分目标', icon: 'none' });
     return;
   }
 
@@ -539,9 +653,14 @@ const submitCustomScore = () => {
 const revokeLastScore = async () => {
   moreActionsPopup.value = false;
   try {
-    await api.revokeScore({ roomId: roomId.value });
+    const result = await api.revokeScore({ roomId: roomId.value });
     await syncRoom();
     socket.value?.emit('score-updated', { roomId: roomId.value });
+    if (result?.status === 'pending') {
+      appendSystemMessage('已发起撤回申请，等待对方确认');
+      uni.showToast({ title: '撤回申请已发出', icon: 'none' });
+      return;
+    }
     appendSystemMessage('已撤回上一笔记分');
   } catch (error) {
     uni.showToast({ title: error.message || '撤回失败', icon: 'none' });
@@ -613,13 +732,16 @@ const sendMessage = async (contentOverride = '') => {
   if (!content) return;
 
   try {
-    await api.sendMessage({ roomId: roomId.value, content, type: 'user' });
+    const targetUserId = selectedTargetId.value || '';
+    await api.sendMessage({ roomId: roomId.value, content, type: 'user', targetUserId });
     message.value = '';
+    floatingPanelVisible.value = false;
     await syncRoom();
-    showChatBubble(currentUserId.value, content);
+    showChatBubble(currentUserId.value, content, targetUserId);
     socket.value?.emit('new-message', {
       roomId: roomId.value,
       userId: currentUserId.value,
+      targetUserId,
       content,
       timestamp: new Date().toISOString()
     });
@@ -630,22 +752,21 @@ const sendMessage = async (contentOverride = '') => {
 
 const sendQuickReaction = async (content) => sendMessage(content);
 
-const showChatBubble = (userId, content) => {
+const showChatBubble = (userId, content, targetUserId = '') => {
   const player = players.value.find(item => item.userId === userId);
   const name = player ? player.name : '系统';
-  showTopToast(`${name}：${content}`);
+  const audienceText = targetUserId ? ` 对 ${getPlayerName(targetUserId, '目标玩家')}` : ' 对全房';
+  showTopToast(`${name}${audienceText}：${content}`);
 };
 
 const buildInteractionCaption = (payload) => {
-  const fromName = players.value.find(item => item.userId === payload.fromUserId)?.name || '玩家';
-  const toName = payload.toUserId
-    ? players.value.find(item => item.userId === payload.toUserId)?.name || '目标玩家'
-    : '';
+  const fromName = getPlayerName(payload.fromUserId, '玩家');
+  const toName = payload.toUserId ? getPlayerName(payload.toUserId, '目标玩家') : '';
 
   if (toName) {
-    return `${fromName} 给 ${toName} 送出${payload.name || '互动'} ${payload.emoji}`;
+    return `${fromName} 对 ${toName} 送出${payload.name || '互动'} ${payload.emoji}`;
   }
-  return `${fromName} 发出了${payload.name || '互动'} ${payload.emoji}`;
+  return `${fromName} 对全部人员送出${payload.name || '互动'} ${payload.emoji}`;
 };
 
 const pushInteractionEffect = (payload) => {
@@ -657,8 +778,9 @@ const pushInteractionEffect = (payload) => {
     id: interactionId,
     emoji: payload.emoji,
     caption: buildInteractionCaption(payload),
-    left: `${12 + Math.random() * 74}%`,
-    top: `${12 + Math.random() * 64}%`
+    kind: payload.name || '',
+    left: `${18 + Math.random() * 56}%`,
+    top: `${22 + Math.random() * 38}%`
   };
 
   interactionEffects.value = [...interactionEffects.value, effect];
@@ -685,6 +807,7 @@ const sendInteraction = (tool) => {
     timestamp: new Date().toISOString()
   };
 
+  floatingPanelVisible.value = false;
   pushInteractionEffect(payload);
   socket.value?.emit('interaction', payload);
 };
@@ -694,6 +817,7 @@ const openScoreModal = () => {
     uni.showToast({ title: '牌局已结束', icon: 'none' });
     return;
   }
+  floatingPanelVisible.value = false;
   scoreModalVisible.value = true;
 };
 
@@ -745,7 +869,9 @@ const initSocket = () => {
 
   socket.value.on('new-message', async (data) => {
     if (data?.userId && data?.content && data.userId !== currentUserId.value) {
-      showChatBubble(data.userId, data.content);
+      const senderName = getPlayerName(data.userId, '玩家');
+      const audienceText = data.targetUserId ? ` 对 ${getPlayerName(data.targetUserId, '目标玩家')}` : ' 对全房';
+      showTopToast(`${senderName}${audienceText}：${data.content}`);
     }
     await refreshRoom();
   });
@@ -847,7 +973,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 18rpx) 30rpx 16rpx;
+  padding: calc(env(safe-area-inset-top) + 14rpx) 30rpx 14rpx;
   position: relative;
   z-index: 20;
 }
@@ -874,7 +1000,8 @@ onUnmounted(() => {
 .interaction-btn,
 .quick-message-chip,
 .setting-item,
-.shortcut-chip {
+.shortcut-chip,
+.floating-fab {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -893,15 +1020,15 @@ onUnmounted(() => {
 }
 
 .top-function-card {
-  margin: 0 30rpx 18rpx;
-  padding: 28rpx;
+  margin: 0 30rpx 14rpx;
+  padding: 24rpx;
   position: relative;
   z-index: 10;
 }
 
 .function-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 18rpx;
 }
@@ -914,8 +1041,9 @@ onUnmounted(() => {
 .room-code-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 14rpx;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 12rpx;
 }
 
 .room-code-label {
@@ -924,9 +1052,9 @@ onUnmounted(() => {
 }
 
 .room-code {
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 900;
-  letter-spacing: 4rpx;
+  letter-spacing: 3rpx;
   color: var(--text-main);
 }
 
@@ -944,11 +1072,11 @@ onUnmounted(() => {
 .room-meta-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 10rpx;
 }
 
 .meta-chip {
-  padding: 10rpx 18rpx;
+  padding: 8rpx 16rpx;
   border-radius: 999rpx;
   background: #f4f7ff;
   color: var(--text-sub);
@@ -963,16 +1091,17 @@ onUnmounted(() => {
 
 .function-actions {
   display: flex;
-  gap: 14rpx;
+  gap: 12rpx;
+  flex-shrink: 0;
 }
 
 .top-action-btn {
-  width: 118rpx;
-  height: 118rpx;
+  width: 98rpx;
+  height: 98rpx;
   flex-direction: column;
-  gap: 8rpx;
-  border-radius: 32rpx;
-  box-shadow: 0 16rpx 28rpx rgba(148, 163, 184, 0.14);
+  gap: 4rpx;
+  border-radius: 28rpx;
+  box-shadow: 0 12rpx 24rpx rgba(148, 163, 184, 0.14);
 }
 
 .share-btn {
@@ -986,25 +1115,26 @@ onUnmounted(() => {
 }
 
 .action-icon {
-  font-size: 34rpx;
+  font-size: 30rpx;
 }
 
 .action-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   font-weight: 800;
 }
 
-.summary-grid {
-  margin-top: 24rpx;
+.summary-strip {
+  margin-top: 16rpx;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
-.summary-item {
-  padding: 20rpx;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.7);
+.summary-pill {
+  padding: 18rpx 20rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.76);
+  border: 2rpx solid rgba(225, 233, 246, 0.86);
 }
 
 .summary-label {
@@ -1032,8 +1162,56 @@ onUnmounted(() => {
   color: #10b981;
 }
 
+.target-context-bar {
+  margin-top: 14rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.78);
+  border: 2rpx solid rgba(224, 232, 246, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.target-context-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.target-context-label {
+  font-size: 22rpx;
+  color: var(--text-light);
+}
+
+.target-context-value {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.target-clear-btn {
+  min-width: 132rpx;
+  height: 60rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  background: #fff0f6;
+  color: var(--primary-strong);
+  font-size: 24rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.target-clear-btn.disabled {
+  background: #f5f5f5;
+  color: var(--text-light);
+}
+
 .player-list-section {
-  padding-bottom: 16rpx;
+  padding-bottom: 12rpx;
 }
 
 .section-head {
@@ -1041,7 +1219,7 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 16rpx;
-  padding: 0 30rpx 14rpx;
+  padding: 0 30rpx 12rpx;
 }
 
 .section-title {
@@ -1055,19 +1233,15 @@ onUnmounted(() => {
   color: var(--text-light);
 }
 
-.player-scroll {
-  width: 100%;
-  white-space: nowrap;
-}
-
-.player-strip {
-  display: inline-flex;
-  gap: 18rpx;
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
   padding: 0 30rpx;
 }
 
 .player-card {
-  width: 164rpx;
+  min-height: 196rpx;
   padding: 18rpx 16rpx;
   border-radius: 28rpx;
   background: rgba(255, 255, 255, 0.74);
@@ -1077,6 +1251,21 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 10rpx;
+}
+
+.all-room-card {
+  justify-content: center;
+}
+
+.all-room-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.all-room-icon {
+  font-size: 46rpx;
+  line-height: 92rpx;
 }
 
 .player-card.active {
@@ -1139,12 +1328,20 @@ onUnmounted(() => {
   color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-score {
   font-size: 30rpx;
   font-weight: 900;
   color: var(--text-main);
+}
+
+.player-score.neutral {
+  font-size: 22rpx;
+  color: var(--text-light);
+  text-align: center;
+  line-height: 1.5;
 }
 
 .player-card-action {
@@ -1162,7 +1359,7 @@ onUnmounted(() => {
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 0 30rpx 18rpx;
+  padding: 0 30rpx 12rpx;
 }
 
 .flow-scroll {
@@ -1171,8 +1368,8 @@ onUnmounted(() => {
 
 .flow-card {
   min-height: 100%;
-  padding-bottom: 200rpx;
-  background: rgba(255, 255, 255, 0.7);
+  padding-bottom: 20rpx;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .flow-head {
@@ -1208,20 +1405,21 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.broadcast-list {
+.broadcast-list,
+.log-list {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 14rpx;
 }
 
 .broadcast-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 18rpx;
+  gap: 16rpx;
   padding: 18rpx 20rpx;
   border-radius: 22rpx;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .broadcast-main {
@@ -1229,33 +1427,27 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-.broadcast-name {
-  margin-right: 10rpx;
-  font-size: 24rpx;
-  font-weight: 800;
-  color: var(--secondary-strong);
-}
-
 .broadcast-content {
   font-size: 24rpx;
+  line-height: 1.6;
   color: var(--text-main);
+}
+
+.broadcast-prefix {
+  color: var(--secondary-strong);
+  font-weight: 800;
 }
 
 .broadcast-time {
   font-size: 22rpx;
   color: var(--text-light);
+  white-space: nowrap;
 }
 
 .flow-divider {
   height: 2rpx;
   margin: 20rpx 0;
   background: rgba(148, 163, 184, 0.14);
-}
-
-.log-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
 }
 
 .log-item {
@@ -1266,7 +1458,7 @@ onUnmounted(() => {
 }
 
 .log-item.revoked {
-  opacity: 0.52;
+  opacity: 0.58;
 }
 
 .log-main {
@@ -1299,7 +1491,7 @@ onUnmounted(() => {
 
 .interaction-stage {
   position: absolute;
-  inset: 0 30rpx 18rpx 30rpx;
+  inset: 0 30rpx 12rpx 30rpx;
   pointer-events: none;
   overflow: hidden;
   z-index: 12;
@@ -1312,20 +1504,32 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  animation: interaction-burst 1.4s ease-out forwards;
+  animation: interaction-burst 1.5s ease-out forwards;
+}
+
+.interaction-effect.bomb::before {
+  content: '';
+  position: absolute;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 180, 198, 0.32) 0%, rgba(255, 180, 198, 0) 68%);
+  transform: translateZ(0);
+  animation: bomb-wave 1.2s ease-out forwards;
+  z-index: -1;
 }
 
 .effect-emoji {
-  font-size: 120rpx;
+  font-size: 124rpx;
   line-height: 1;
   filter: drop-shadow(0 16rpx 20rpx rgba(15, 23, 42, 0.14));
 }
 
 .effect-caption {
-  max-width: 320rpx;
+  max-width: 360rpx;
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   color: var(--text-main);
   font-size: 22rpx;
   font-weight: 700;
@@ -1335,19 +1539,34 @@ onUnmounted(() => {
 @keyframes interaction-burst {
   0% {
     opacity: 0;
-    transform: translate(-50%, -30%) scale(0.5);
+    transform: translate(-50%, -12%) scale(0.45);
   }
-  20% {
+  22% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.04);
+    transform: translate(-50%, -50%) scale(1.08);
   }
-  70% {
+  72% {
     opacity: 1;
-    transform: translate(-50%, -72%) scale(1);
+    transform: translate(-50%, -64%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -96%) scale(0.92);
+    transform: translate(-50%, -88%) scale(0.92);
+  }
+}
+
+@keyframes bomb-wave {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
   }
 }
 
@@ -1355,38 +1574,32 @@ onUnmounted(() => {
   position: relative;
   z-index: 20;
   padding: 0 24rpx calc(18rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95) 18%, #fff 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.94) 18%, #fff 100%);
   backdrop-filter: blur(18px);
 }
 
-.sub-bottom-interactions {
-  padding-bottom: 14rpx;
+.bottom-dock {
+  padding: 10rpx 8rpx 0;
 }
 
-.interaction-panel {
-  padding: 18rpx 18rpx 16rpx;
-  border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 14rpx 32rpx rgba(148, 163, 184, 0.16);
-}
-
-.interaction-head {
+.chat-range-bar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
-  margin-bottom: 16rpx;
+  gap: 14rpx;
+  margin-bottom: 12rpx;
+  padding: 0 6rpx;
 }
 
-.interaction-title {
-  font-size: 28rpx;
-  font-weight: 900;
-  color: var(--text-main);
-}
-
-.interaction-target {
+.chat-range-label {
   font-size: 22rpx;
   color: var(--text-light);
+}
+
+.chat-range-value {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: var(--primary-strong);
 }
 
 .interaction-list {
@@ -1414,20 +1627,10 @@ onUnmounted(() => {
   color: var(--text-main);
 }
 
-.bottom-dock {
-  padding: 16rpx 8rpx 0;
-}
-
-.quick-message-strip {
-  width: 100%;
-  margin-bottom: 16rpx;
-  white-space: nowrap;
-}
-
-.quick-message-list {
-  display: inline-flex;
+.quick-message-list.floating-chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
-  padding: 4rpx 4rpx 2rpx;
 }
 
 .quick-message-chip {
@@ -1451,7 +1654,7 @@ onUnmounted(() => {
   flex: 1;
   height: 88rpx;
   border-radius: var(--radius-pill);
-  font-size: 28rpx;
+  font-size: 26rpx;
   background: #f4f6fa !important;
 }
 
@@ -1462,6 +1665,65 @@ onUnmounted(() => {
   border-radius: var(--radius-pill);
   font-size: 28rpx;
   font-weight: 800;
+}
+
+.floating-action-stack {
+  position: fixed;
+  right: 24rpx;
+  bottom: calc(142rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14rpx;
+  z-index: 50;
+}
+
+.floating-panel {
+  width: 480rpx;
+  padding: 20rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2rpx solid rgba(255, 255, 255, 0.84);
+  box-shadow: var(--shadow-lg);
+}
+
+.floating-panel-head {
+  margin-bottom: 16rpx;
+}
+
+.floating-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.floating-subtitle {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.floating-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.floating-fab {
+  min-width: 156rpx;
+  height: 82rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 900;
+  box-shadow: var(--shadow-accent);
+}
+
+.floating-fab.secondary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  box-shadow: var(--shadow-primary);
 }
 
 .modal-mask,
@@ -1509,6 +1771,59 @@ onUnmounted(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18rpx;
   margin-bottom: 24rpx;
+}
+
+.target-picker {
+  margin-bottom: 24rpx;
+  padding: 18rpx;
+  border-radius: 24rpx;
+  background: #fff8fb;
+}
+
+.target-picker-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-bottom: 14rpx;
+}
+
+.target-picker-title {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.target-picker-tip {
+  font-size: 22rpx;
+  color: var(--text-light);
+}
+
+.target-picker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.target-player-chip {
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: var(--text-sub);
+  font-size: 24rpx;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.target-player-chip.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.target-player-chip.room-chip {
+  background: #f4f6fa;
 }
 
 .shortcut-chip {
@@ -1653,5 +1968,41 @@ onUnmounted(() => {
   border-radius: 999rpx;
   font-size: 30rpx;
   font-weight: 800;
+}
+
+@media (max-width: 380px) {
+  .function-main,
+  .chat-row,
+  .log-main,
+  .broadcast-item,
+  .target-context-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-strip,
+  .player-grid,
+  .interaction-list,
+  .floating-list,
+  .shortcut-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .function-actions,
+  .chat-send-btn,
+  .score-open-btn,
+  .floating-panel {
+    width: 100%;
+  }
+
+  .top-action-btn {
+    flex: 1;
+  }
+
+  .floating-action-stack {
+    left: 24rpx;
+    right: 24rpx;
+    align-items: stretch;
+  }
 }
 </style>
