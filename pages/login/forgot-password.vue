@@ -80,6 +80,7 @@
 <script setup>
 import { ref } from 'vue';
 import { api } from '../../utils/api';
+import { navigateBackOrPage } from '../../utils/auth';
 
 const phone = ref('');
 const nickName = ref('');
@@ -128,13 +129,7 @@ const resetPassword = async () => {
 };
 
 const goToLogin = () => {
-  const pages = getCurrentPages();
-  if (pages.length > 1) {
-    uni.navigateBack({ delta: 1 });
-    return;
-  }
-
-  uni.reLaunch({ url: '/pages/login/login' });
+  navigateBackOrPage('/pages/login/login');
 };
 </script>
 

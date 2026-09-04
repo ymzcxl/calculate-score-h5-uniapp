@@ -37,10 +37,10 @@
 		}
 	],
 	"globalStyle": {
-                "navigationBarTextStyle": "white",
-		"navigationBarTitleText": "打牌计分",
-                "navigationBarBackgroundColor": "#1B1513",
-                "backgroundColor": "#1B1513"
+                "navigationBarTextStyle": "black",
+                "navigationBarTitleText": "牌友记分",
+                "navigationBarBackgroundColor": "#F7F9FC",
+                "backgroundColor": "#F7F9FC"
 	},
 	"uniIdRouter": {}
 }

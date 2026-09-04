@@ -1,5 +1,25 @@
 const PENDING_REDIRECT_KEY = 'pending_redirect_url';
 
+const normalizePageUrl = (url) => {
+  if (!url) {
+    return '/pages/login/login';
+  }
+
+  const normalized = String(url).trim();
+  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+};
+
+const buildHashUrl = (url) => {
+  const target = normalizePageUrl(url);
+
+  if (typeof window === 'undefined' || !window.location) {
+    return target;
+  }
+
+  const { pathname, search } = window.location;
+  return `${pathname}${search}#${target}`;
+};
+
 export const savePendingRedirect = (url) => {
   if (!url) {
     return;
@@ -13,9 +33,46 @@ export const consumePendingRedirect = () => {
   return value;
 };
 
+export const navigateToPage = (url) => {
+  const target = normalizePageUrl(url);
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.hash = target;
+    return;
+  }
+
+  uni.navigateTo({ url: target });
+};
+
+export const reLaunchPage = (url) => {
+  const target = normalizePageUrl(url);
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.replace(buildHashUrl(target));
+    return;
+  }
+
+  uni.reLaunch({ url: target });
+};
+
+export const navigateBackOrPage = (fallbackUrl) => {
+  if (typeof window !== 'undefined' && window.history) {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+  } else {
+    const pages = getCurrentPages();
+    if (pages.length > 1) {
+      uni.navigateBack({ delta: 1 });
+      return;
+    }
+  }
+
+  reLaunchPage(fallbackUrl);
+};
+
 export const redirectToLogin = (url) => {
   savePendingRedirect(url);
-  uni.reLaunch({ url: '/pages/login/login' });
+  reLaunchPage('/pages/login/login');
 };
 
 export const getRoomPageUrl = (roomId, isCreator = false) => {

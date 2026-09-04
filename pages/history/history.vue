@@ -91,13 +91,27 @@
       </view>
     </view>
 
+    <!-- 弹窗：确认操作 -->
+    <view v-if="confirmPopup.visible" class="modal-mask" @click="closeConfirm">
+      <view class="macaron-card modal-panel" @click.stop>
+        <view class="modal-title">{{ confirmPopup.title || '提示' }}</view>
+        <view class="modal-desc" style="font-size: 30rpx; margin-bottom: 40rpx; color: #4a4a4a;">
+          {{ confirmPopup.content }}
+        </view>
+        <view class="modal-actions">
+          <button class="macaron-btn ghost" @click="closeConfirm">取消</button>
+          <button class="macaron-btn" :class="{ pink: confirmPopup.isDanger }" @click="handleConfirm">确 定</button>
+        </view>
+      </view>
+    </view>
+
   </view>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { api } from '../../utils/api';
-import { redirectToLogin } from '../../utils/auth';
+import { navigateBackOrPage, reLaunchPage, redirectToLogin } from '../../utils/auth';
 
 const resultTextMap = {
   win: '大胜',
@@ -115,6 +129,35 @@ const stats = ref({
 });
 
 const historyRecords = ref([]);
+
+const confirmPopup = ref({
+  visible: false,
+  title: '',
+  content: '',
+  isDanger: false,
+  onConfirm: null
+});
+
+const showConfirm = (title, content, onConfirm, isDanger = false) => {
+  confirmPopup.value = {
+    visible: true,
+    title,
+    content,
+    isDanger,
+    onConfirm
+  };
+};
+
+const closeConfirm = () => {
+  confirmPopup.value.visible = false;
+};
+
+const handleConfirm = () => {
+  if (confirmPopup.value.onConfirm) {
+    confirmPopup.value.onConfirm();
+  }
+  closeConfirm();
+};
 
 const archiveStatusText = computed(() => (historyRecords.value.length ? '已同步' : '暂无数据'));
 
@@ -164,30 +207,21 @@ const loadData = async () => {
 };
 
 const clearHistory = () => {
-  uni.showModal({
-    title: '确认清空？',
-    content: '所有历史战绩将被永久删除，不可恢复哦。',
-    success: async ({ confirm }) => {
-      if (!confirm) return;
-      try {
-        await api.clearHistory();
-        historyRecords.value = [];
-        await loadData();
-        uni.showToast({ title: '已清空', icon: 'success' });
-      } catch (error) {
-        uni.showToast({ title: error.message || '清空失败', icon: 'none' });
-      }
+  showConfirm('确认清空？', '所有历史战绩将被永久删除，不可恢复哦。', async () => {
+    try {
+      await api.clearHistory();
+      historyRecords.value = [];
+      await loadData();
+      uni.showToast({ title: '已清空', icon: 'success' });
+    } catch (error) {
+      uni.showToast({ title: error.message || '清空失败', icon: 'none' });
     }
-  });
+  }, true);
 };
 
-const goToHome = () => uni.reLaunch({ url: '/pages/index/index' });
+const goToHome = () => reLaunchPage('/pages/index/index');
 
-const goBack = () => {
-  const pages = getCurrentPages();
-  if (pages.length > 1) uni.navigateBack({ delta: 1 });
-  else goToHome();
-};
+const goBack = () => navigateBackOrPage('/pages/index/index');
 
 onMounted(loadData);
 </script>

@@ -8,9 +8,9 @@
         <view class="user-info">
           <view class="name-row">
             <text class="nickname">{{ userInfo.nickName || '牌局玩家' }}</text>
-            <text class="macaron-badge yellow">UID: {{ userInfo.uid || '--' }}</text>
+            <text class="macaron-badge yellow" v-if="userInfo.phone">{{ userInfo.phone }}</text>
+            <text class="macaron-badge blue" v-else>未绑定手机</text>
           </view>
-          <text class="phone">{{ userInfo.phone || '未绑定手机号' }}</text>
         </view>
         <view class="setting-btn" @click="settingsPopup = true">⚙️</view>
       </view>
@@ -169,14 +169,28 @@
       </view>
     </view>
 
+    <!-- 弹窗：确认操作 -->
+    <view v-if="confirmPopup.visible" class="modal-mask" @click="closeConfirm">
+      <view class="macaron-card modal-panel" @click.stop>
+        <view class="modal-title">{{ confirmPopup.title || '提示' }}</view>
+        <view class="modal-desc" style="font-size: 30rpx; margin-bottom: 40rpx; color: #4a4a4a;">
+          {{ confirmPopup.content }}
+        </view>
+        <view class="modal-actions">
+          <button class="macaron-btn ghost" @click="closeConfirm">取消</button>
+          <button class="macaron-btn" :class="{ pink: confirmPopup.isDanger }" @click="handleConfirm">确 定</button>
+        </view>
+      </view>
+    </view>
+
   </view>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { api } from '../../utils/api';
-import { getRoomPageUrl, redirectToLogin } from '../../utils/auth';
+import { getRoomPageUrl, navigateToPage, redirectToLogin } from '../../utils/auth';
 
 const defaultAvatar = 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cute%20pastel%20macaron%20avatar%20icon%20for%20card%20game%20app%2C%20kawaii%20style%2C%20flat%20design%2C%20clean&image_size=square';
 
@@ -207,6 +221,44 @@ const passwordPopup = ref(false);
 const oldPassword = ref('');
 const newPassword = ref('');
 const confirmPassword = ref('');
+
+const confirmPopup = ref({
+  visible: false,
+  title: '',
+  content: '',
+  isDanger: false,
+  onConfirm: null
+});
+
+const showConfirm = (title, content, onConfirm, isDanger = false) => {
+  confirmPopup.value = {
+    visible: true,
+    title,
+    content,
+    isDanger,
+    onConfirm
+  };
+};
+
+const closeConfirm = () => {
+  confirmPopup.value.visible = false;
+};
+
+const handleConfirm = () => {
+  if (confirmPopup.value.onConfirm) {
+    confirmPopup.value.onConfirm();
+  }
+  closeConfirm();
+};
+
+const defaultStats = () => ({
+  totalGames: 0,
+  winGames: 0,
+  winRate: 0,
+  totalScore: 0,
+  averageScore: 0,
+  bestScore: 0
+});
 
 const greetingTitle = computed(() => {
   const hour = new Date().getHours();
@@ -262,14 +314,17 @@ const extractRoomId = (value) => {
 };
 
 const loadDashboard = async () => {
+  // 优先从本地缓存读取，防止白屏等待
+  const cachedUser = uni.getStorageSync('userInfo');
+  if (cachedUser) {
+    userInfo.value = cachedUser;
+  }
+
   if (!requireAuth()) return;
   try {
-    const [profile, summary] = await Promise.all([
-      api.getUserInfo(),
-      api.getStats()
-    ]);
+    const profile = await api.getUserInfo();
     userInfo.value = profile;
-    stats.value = summary;
+    uni.setStorageSync('userInfo', profile);
     
     // 如果后端返回了正在进行的房间号，记录下来
     if (profile.activeRoomId) {
@@ -279,39 +334,39 @@ const loadDashboard = async () => {
       activeRoomId.value = '';
       activeRoomIsCreator.value = false;
     }
-    
-    uni.setStorageSync('userInfo', profile);
   } catch (error) {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
+    return;
+  }
+
+  try {
+    const summary = await api.getStats();
+    stats.value = summary;
+  } catch (error) {
+    stats.value = defaultStats();
+    console.error('加载统计数据失败:', error);
   }
 };
 
 const returnToActiveRoom = () => {
   if (activeRoomId.value) {
-    uni.navigateTo({ url: getRoomPageUrl(activeRoomId.value) });
+    navigateToPage(getRoomPageUrl(activeRoomId.value));
   }
 };
 
 const quickEndRoom = () => {
   if (!activeRoomId.value) return;
-  uni.showModal({
-    title: '结束当局',
-    content: '这将会结算并结束该牌局，确认操作吗？',
-    confirmColor: '#f43f5e',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await api.settleRoom({ roomId: activeRoomId.value });
-          uni.showToast({ title: '对局已结束', icon: 'success' });
-          activeRoomId.value = '';
-          activeRoomIsCreator.value = false;
-          loadDashboard();
-        } catch (err) {
-          uni.showToast({ title: err.message || '结束失败', icon: 'none' });
-        }
-      }
+  showConfirm('结束对局', '这将会结算并结束该牌局，确认操作吗？', async () => {
+    try {
+      await api.settleRoom({ roomId: activeRoomId.value });
+      uni.showToast({ title: '对局已结束', icon: 'success' });
+      activeRoomId.value = '';
+      activeRoomIsCreator.value = false;
+      loadDashboard();
+    } catch (err) {
+      uni.showToast({ title: err.message || '结束失败', icon: 'none' });
     }
-  });
+  }, true);
 };
 
 const createRoom = async () => {
@@ -319,7 +374,7 @@ const createRoom = async () => {
   try {
     uni.showLoading({ title: '正在建房...' });
     const room = await api.createRoom({});
-    uni.navigateTo({ url: getRoomPageUrl(room.roomId, true) });
+    navigateToPage(getRoomPageUrl(room.roomId, true));
   } catch (error) {
     uni.showToast({ title: error.message || '创建失败', icon: 'none' });
   } finally {
@@ -341,7 +396,7 @@ const joinByRoomId = async (value, source = 'manual') => {
     uni.showLoading({ title: '正在加入...' });
     await api.joinRoom({ roomId });
     joinPopup.value = false;
-    uni.navigateTo({ url: getRoomPageUrl(roomId) });
+    navigateToPage(getRoomPageUrl(roomId));
   } catch (error) {
     uni.showToast({ title: error.message || '加入失败', icon: 'none' });
   } finally {
@@ -364,7 +419,7 @@ const pasteLink = () => {
   });
 };
 
-const goToHistory = () => uni.navigateTo({ url: '/pages/history/history' });
+const goToHistory = () => navigateToPage('/pages/history/history');
 
 const openNicknamePopup = () => {
   settingsPopup.value = false;
@@ -414,26 +469,22 @@ const savePassword = async () => {
   }
 };
 
-const logout = async () => {
+const logout = () => {
   settingsPopup.value = false;
-  uni.showModal({
-    title: '要离开了吗？',
-    content: '退出后需要重新登录哦',
-    success: async ({ confirm }) => {
-      if (!confirm) return;
-      try {
-        await api.logout();
-      } catch (error) {
-        console.error(error);
-      } finally {
-        uni.removeStorageSync('token');
-        uni.removeStorageSync('userInfo');
-        redirectToLogin('/pages/index/index');
-      }
+  showConfirm('退出登录', '要离开了吗？退出后需要重新登录哦', async () => {
+    try {
+      await api.logout();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      uni.removeStorageSync('token');
+      uni.removeStorageSync('userInfo');
+      redirectToLogin('/pages/index/index');
     }
-  });
+  }, true);
 };
 
+onMounted(loadDashboard);
 onShow(loadDashboard);
 </script>
 
@@ -502,23 +553,24 @@ onShow(loadDashboard);
 }
 .action-card {
   flex: 1;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 32rpx 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: var(--shadow-sm);
+  border: 2rpx solid rgba(220, 229, 246, 0.72);
+  box-shadow: var(--shadow-md);
   transition: transform 0.2s;
 }
 .action-card:active {
   transform: scale(0.96);
 }
 .create-box {
-  background: linear-gradient(135deg, var(--secondary-light), #fff);
+  background: var(--surface-soft-blue);
 }
 .join-box {
-  background: linear-gradient(135deg, var(--primary-light), #fff);
+  background: var(--surface-soft-pink);
 }
 .action-icon {
   font-size: 64rpx;
@@ -606,8 +658,8 @@ onShow(loadDashboard);
   .more-link {
     margin-left: auto;
     font-size: 24rpx;
-    color: var(--secondary);
-    font-weight: normal;
+    color: var(--secondary-strong);
+    font-weight: 700;
   }
 }
 .stats-grid {
@@ -617,11 +669,13 @@ onShow(loadDashboard);
   margin-bottom: 32rpx;
 }
 .stat-item {
-  background: #F8FAFC;
+  background: linear-gradient(180deg, #f9fbff, #ffffff);
   border-radius: var(--radius-md);
   padding: 24rpx;
   display: flex;
   flex-direction: column;
+  border: 2rpx solid rgba(217, 228, 247, 0.72);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.85);
 }
 .stat-num {
   font-size: 40rpx;
@@ -638,13 +692,15 @@ onShow(loadDashboard);
 }
 
 .rhythm-box {
-  background: #fff5f5;
+  background: linear-gradient(135deg, #fff6f8, #fffdfd);
   border-radius: var(--radius-md);
   padding: 24rpx;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 12rpx;
+  border: 2rpx solid rgba(255, 228, 233, 0.82);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.78);
 }
 .rhythm-label {
   font-size: 26rpx;
@@ -658,43 +714,7 @@ onShow(loadDashboard);
   margin-top: 8rpx;
 }
 
-/* 弹窗样式 */
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(8rpx);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx;
-}
-.modal-panel {
-  width: 100%;
-  max-width: 600rpx;
-  margin-bottom: 0;
-}
-.modal-title {
-  font-size: 36rpx;
-  font-weight: 800;
-  text-align: center;
-  margin-bottom: 16rpx;
-}
-.modal-desc {
-  font-size: 26rpx;
-  color: var(--text-sub);
-  text-align: center;
-  margin-bottom: 32rpx;
-}
-.modal-actions {
-  display: flex;
-  gap: 20rpx;
-  margin-top: 40rpx;
-}
+/* 弹窗：加入房间 (依赖全局样式) */
 .input-group {
   display: flex;
   flex-direction: column;
@@ -725,15 +745,17 @@ onShow(loadDashboard);
   display: flex;
   align-items: center;
   padding: 24rpx;
-  background: #F8FAFC;
+  background: linear-gradient(180deg, #f9fbff, #ffffff);
   border-radius: var(--radius-md);
   transition: background 0.2s;
+  border: 2rpx solid rgba(220, 229, 246, 0.72);
+  box-shadow: var(--shadow-sm);
 }
 .setting-item:active {
-  background: #F1F5F9;
+  background: #f4f8ff;
 }
 .setting-item.danger {
-  background: #FFF1F2;
+  background: linear-gradient(135deg, #fff3f5, #fffafb);
 }
 .setting-item.danger .st-title {
   color: #E11D48;
