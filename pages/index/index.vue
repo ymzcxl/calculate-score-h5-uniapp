@@ -3,7 +3,7 @@
     <view class="macaron-card home-hero">
       <view class="hero-top">
         <view class="hero-user">
-          <image class="avatar" :src="userInfo.avatarUrl || defaultAvatar"></image>
+          <image class="avatar" :src="displayAvatar" mode="aspectFill"></image>
           <view class="user-copy">
             <view class="name-row">
               <text class="nickname">{{ userInfo.nickName || '牌局玩家' }}</text>
@@ -38,14 +38,17 @@
 
     <view class="section-head">
       <text class="section-title">快速开局</text>
-      <text class="section-desc">创建房间或直接输入房间号进桌</text>
+      <view class="section-help-entry" @click="helpPopup = true">
+        <view class="section-help-dot">?</view>
+        <text class="section-help-text">如何使用</text>
+      </view>
     </view>
 
     <view class="action-grid">
       <view class="action-card create-box" @click="openCreateRoomPopup">
         <view class="action-icon">🎲</view>
-        <text class="action-title">创建房间</text>
-        <text class="action-desc">先起个房间名，再拉朋友开打</text>
+        <text class="action-title">创建牌局</text>
+        <text class="action-desc">起个房间名，马上拉朋友进桌</text>
         <view class="action-chip">推荐从这里开始</view>
       </view>
       
@@ -107,8 +110,8 @@
 
     <view v-if="createRoomPopup" class="modal-mask" @click="createRoomPopup = false">
       <view class="macaron-card modal-panel create-room-panel" @click.stop>
-        <view class="modal-title">创建房间</view>
-        <view class="modal-desc">给这一桌牌局起个名字，朋友进房后更容易认出来。</view>
+        <view class="modal-title">创建牌局</view>
+        <view class="modal-desc">给这一桌起个名字，朋友进房时更容易认出来。</view>
         <view class="input-group create-room-group">
           <input
             v-model.trim="roomTitleInput"
@@ -219,7 +222,7 @@
               <text class="st-title">修改昵称</text>
               <text class="st-desc">房间里大家看到的名字</text>
             </view>
-            <view class="setting-arrow">></view>
+            <view class="setting-arrow"></view>
           </view>
           
           <view class="setting-item" @click="openPasswordPopup">
@@ -228,7 +231,7 @@
               <text class="st-title">修改密码</text>
               <text class="st-desc">账号安全第一</text>
             </view>
-            <view class="setting-arrow">></view>
+            <view class="setting-arrow"></view>
           </view>
           
           <view class="setting-item danger" @click="logout">
@@ -281,11 +284,6 @@
       </view>
     </view>
 
-    <view class="help-fab" @click="helpPopup = true">
-      <text class="help-fab-icon">?</text>
-      <text class="help-fab-text">如何使用</text>
-    </view>
-
   </view>
 </template>
 
@@ -294,8 +292,7 @@ import { computed, onMounted, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { api } from '../../utils/api';
 import { getRoomPageUrl, navigateToPage, redirectToLogin } from '../../utils/auth';
-
-const defaultAvatar = 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cute%20pastel%20macaron%20avatar%20icon%20for%20card%20game%20app%2C%20kawaii%20style%2C%20flat%20design%2C%20clean&image_size=square';
+import { resolveAvatarUrl } from '../../utils/avatar';
 
 const userInfo = ref({
   nickName: '',
@@ -376,10 +373,12 @@ const greetingTitle = computed(() => {
 
 const dashboardSubtitle = computed(() => {
   if (!stats.value.totalGames) {
-    return '还没有记录呢，快拉上朋友开一局吧~';
+    return '还没开过局，从下面挑一个入口开始。';
   }
-  return `已经玩了 ${stats.value.totalGames} 局，继续保持节奏！`;
+  return `已经玩了 ${stats.value.totalGames} 局，下一桌继续。`;
 });
+
+const displayAvatar = computed(() => resolveAvatarUrl(userInfo.value));
 
 const sanitizeRoomTitle = (value = '') => value.replace(/\s+/g, ' ').trim().slice(0, 18);
 
@@ -742,11 +741,15 @@ onShow(loadDashboard);
   min-width: 120rpx;
   min-height: 68rpx;
   padding: 0 20rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.74);
   color: var(--primary-strong);
   font-size: 24rpx;
   font-weight: 800;
+  line-height: 1;
   box-shadow: var(--shadow-xs);
 }
 
@@ -824,6 +827,39 @@ onShow(loadDashboard);
   margin-bottom: 28rpx;
 }
 
+.section-help-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 60rpx;
+  padding: 0 18rpx 0 14rpx;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.76);
+  box-shadow: var(--shadow-xs);
+  line-height: 1;
+}
+
+.section-help-dot {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 20rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-help-text {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
 .action-card {
   display: flex;
   flex-direction: column;
@@ -883,12 +919,16 @@ onShow(loadDashboard);
 
 .action-chip {
   margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10rpx 18rpx;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.72);
   color: var(--primary-strong);
   font-size: 22rpx;
   font-weight: 800;
+  line-height: 1;
 }
 
 .action-chip.pink {
@@ -967,13 +1007,15 @@ onShow(loadDashboard);
   min-height: 64rpx;
   padding: 0 22rpx;
   border-radius: var(--radius-pill);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .stats-card {
   flex: 1;
+  margin-top: 8rpx;
 }
 
 .stat-item {
@@ -1002,7 +1044,7 @@ onShow(loadDashboard);
 }
 
 .rhythm-box {
-  margin-top: 24rpx;
+  margin-top: 38rpx;
   padding: 24rpx;
   display: flex;
   align-items: center;
@@ -1120,16 +1162,23 @@ onShow(loadDashboard);
   margin-top: 6rpx;
 }
 .setting-arrow {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 22rpx;
-  background: rgba(244, 247, 255, 0.95);
-  color: var(--text-light);
-  font-size: 38rpx;
-  font-weight: 800;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 18rpx;
+  background: rgba(244, 247, 255, 0.9);
+  border: 2rpx solid rgba(219, 229, 248, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.setting-arrow::before {
+  content: '';
+  width: 14rpx;
+  height: 14rpx;
+  border-top: 4rpx solid var(--text-light);
+  border-right: 4rpx solid var(--text-light);
+  transform: translateX(-2rpx) rotate(45deg);
 }
 
 .create-room-panel {
@@ -1173,9 +1222,10 @@ onShow(loadDashboard);
   color: var(--primary-strong);
   font-size: 22rpx;
   font-weight: 700;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .helper-modal {
@@ -1186,42 +1236,6 @@ onShow(loadDashboard);
   display: flex;
   flex-direction: column;
   gap: 16rpx;
-}
-
-.help-fab {
-  position: fixed;
-  right: 28rpx;
-  bottom: calc(32rpx + env(safe-area-inset-bottom));
-  min-width: 148rpx;
-  height: 88rpx;
-  padding: 0 22rpx 0 18rpx;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: var(--shadow-md);
-  border: 2rpx solid rgba(255, 255, 255, 0.82);
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  z-index: 45;
-}
-
-.help-fab-icon {
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
-  color: var(--primary-strong);
-  font-size: 28rpx;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.help-fab-text {
-  font-size: 24rpx;
-  font-weight: 800;
-  color: var(--text-main);
 }
 
 @media (max-width: 380px) {
@@ -1241,10 +1255,14 @@ onShow(loadDashboard);
     justify-content: space-between;
   }
 
-  .help-fab {
-    min-width: 132rpx;
-    height: 78rpx;
-    padding: 0 18rpx 0 14rpx;
+  .section-head {
+    align-items: flex-start;
+    gap: 14rpx;
+  }
+
+  .section-help-entry {
+    min-height: 54rpx;
+    padding: 0 16rpx 0 12rpx;
   }
 }
 </style>

@@ -3,13 +3,15 @@
     <view class="page-nav">
       <view class="nav-btn nav-pill" @click="goBack">
         <text class="nav-icon">←</text>
-        <text>返回</text>
+        <text class="nav-btn-text">返回</text>
       </view>
       <view class="nav-title">
         <text class="title-text">历史战绩</text>
         <text class="sub-text">回看每一局的结果和你的走势</text>
       </view>
-      <view class="nav-btn nav-pill right" @click="goToHome">首页</view>
+      <view class="nav-btn nav-pill right" @click="goToHome">
+        <text class="nav-btn-text">首页</text>
+      </view>
     </view>
 
     <view class="macaron-card summary-card">
@@ -240,17 +242,38 @@ onMounted(loadData);
   flex-direction: column;
 }
 
+.page-nav {
+  display: grid;
+  grid-template-columns: 132rpx minmax(0, 1fr) 132rpx;
+  align-items: center;
+  column-gap: 16rpx;
+}
+
 .nav-pill {
+  width: 132rpx;
+  min-width: 132rpx;
+  min-height: 76rpx;
+  padding: 0 18rpx;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8rpx;
   line-height: 1;
+  justify-self: stretch;
 }
 
 .nav-icon {
   font-size: 26rpx;
   line-height: 1;
+}
+
+.nav-btn-text {
+  line-height: 1;
+}
+
+.nav-title {
+  align-items: center;
+  text-align: center;
 }
 
 .summary-card {
@@ -512,6 +535,10 @@ onMounted(loadData);
 }
 
 @media (max-width: 380px) {
+  .page-nav {
+    grid-template-columns: 120rpx minmax(0, 1fr) 120rpx;
+  }
+
   .summary-banner,
   .insight-row,
   .r-body {

@@ -54,6 +54,7 @@ export const api = {
   revokeScore: (data) => request({ url: '/score/revoke', method: 'POST', data, auth: true }),
   getScoreHistory: (roomId) => request({ url: `/score/history?roomId=${encodeURIComponent(roomId)}`, auth: true }),
   sendMessage: (data) => request({ url: '/message/send', method: 'POST', data, auth: true }),
+  sendLeaderboardNotice: (data) => request({ url: '/message/leaderboard-notice', method: 'POST', data, auth: true }),
   getMessageHistory: (roomId) => request({ url: `/message/history?roomId=${encodeURIComponent(roomId)}`, auth: true }),
   getHistoryList: () => request({ url: '/history/list', auth: true }),
   getHistoryDetail: (roomId) => request({ url: `/history/detail?roomId=${encodeURIComponent(roomId)}`, auth: true }),

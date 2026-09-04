@@ -118,8 +118,8 @@ button {
   outline: none;
   background: transparent;
   font-family: inherit;
-  line-height: 1.2;
-  display: flex;
+  line-height: 1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -180,12 +180,16 @@ textarea {
   width: 100%;
   min-height: 96rpx;
   padding: 0 30rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-pill);
   border: 2rpx solid rgba(255, 255, 255, 0.24);
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
   color: #fff;
   font-size: 30rpx;
   font-weight: 800;
+  line-height: 1;
   letter-spacing: 0.5rpx;
   box-shadow: var(--shadow-primary);
   white-space: nowrap;
@@ -292,11 +296,15 @@ textarea {
   min-width: 116rpx;
   min-height: 72rpx;
   padding: 0 20rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.74);
   color: var(--primary-strong);
   font-size: 24rpx;
   font-weight: 700;
+  line-height: 1;
   box-shadow: var(--shadow-xs);
 }
 

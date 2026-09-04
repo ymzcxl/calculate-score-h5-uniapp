@@ -358,12 +358,16 @@ onMounted(() => {
 
 .hero-tag {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10rpx 18rpx;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.74);
   color: var(--primary-strong);
   font-size: 22rpx;
   font-weight: 800;
+  line-height: 1;
   box-shadow: var(--shadow-xs);
 }
 
@@ -417,10 +421,14 @@ onMounted(() => {
 }
 
 .hero-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10rpx 20rpx;
   border-radius: var(--radius-pill);
   font-size: 22rpx;
   font-weight: 700;
+  line-height: 1;
   background: rgba(255, 255, 255, 0.74);
   box-shadow: var(--shadow-xs);
 }
@@ -474,13 +482,14 @@ onMounted(() => {
   flex: 1;
   position: relative;
   z-index: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 78rpx;
   font-size: 28rpx;
   font-weight: 800;
   color: var(--text-sub);
+  line-height: 1;
 }
 
 .switch-item.active {
@@ -626,9 +635,13 @@ onMounted(() => {
 }
 
 .helper-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24rpx;
   color: var(--primary-strong);
   font-weight: 800;
+  line-height: 1;
 }
 
 .submit-btn {
