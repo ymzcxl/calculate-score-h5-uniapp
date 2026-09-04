@@ -3,7 +3,7 @@
     <view class="macaron-card home-hero">
       <view class="hero-top">
         <view class="hero-user">
-          <image class="avatar" :src="userInfo.avatarUrl || defaultAvatar"></image>
+          <image class="avatar" :src="displayAvatar" mode="aspectFill"></image>
           <view class="user-copy">
             <view class="name-row">
               <text class="nickname">{{ userInfo.nickName || '牌局玩家' }}</text>
@@ -225,8 +225,7 @@ import { computed, onMounted, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { api } from '../../utils/api';
 import { getRoomPageUrl, navigateToPage, redirectToLogin } from '../../utils/auth';
-
-const defaultAvatar = 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cute%20pastel%20macaron%20avatar%20icon%20for%20card%20game%20app%2C%20kawaii%20style%2C%20flat%20design%2C%20clean&image_size=square';
+import { resolveAvatarUrl } from '../../utils/avatar';
 
 const userInfo = ref({
   nickName: '',
@@ -307,6 +306,8 @@ const dashboardSubtitle = computed(() => {
   }
   return `已经玩了 ${stats.value.totalGames} 局，继续保持节奏！`;
 });
+
+const displayAvatar = computed(() => resolveAvatarUrl(userInfo.value));
 
 const rhythmCopy = computed(() => {
   if (!stats.value.totalGames) return '打完第一局就会有评价哦';
