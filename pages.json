@@ -39,8 +39,8 @@
 	"globalStyle": {
                 "navigationBarTextStyle": "black",
                 "navigationBarTitleText": "牌友记分",
-                "navigationBarBackgroundColor": "#F7F9FC",
-                "backgroundColor": "#F7F9FC"
+                "navigationBarBackgroundColor": "#F7FAFF",
+                "backgroundColor": "#F7FAFF"
 	},
 	"uniIdRouter": {}
 }

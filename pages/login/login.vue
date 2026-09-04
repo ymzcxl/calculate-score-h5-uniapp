@@ -1,102 +1,132 @@
 <template>
   <view class="app-shell login-page">
-    <!-- 活泼的背景装饰 -->
-    <view class="bg-shape shape-1"></view>
-    <view class="bg-shape shape-2"></view>
-    <view class="bg-shape shape-3"></view>
-    
-    <!-- 头部品牌区 -->
-    <view class="header-zone">
-      <view class="logo-box">
-        <text class="logo-icon">🎮</text>
+    <view class="bg-orb orb-left"></view>
+    <view class="bg-orb orb-right"></view>
+    <view class="bg-grid"></view>
+
+    <view class="hero-panel">
+      <view class="hero-mark">
+        <view class="mark-inner">
+          <text class="mark-text">牌局</text>
+        </view>
       </view>
-      <text class="brand-title">牌友记分</text>
-      <text class="brand-sub">随时随地，开心开局</text>
-      <view class="play-tags">
-        <text class="play-tag pink">马卡龙开局</text>
-        <text class="play-tag blue">实时同步</text>
+      <view class="hero-copy">
+        <text class="hero-tag">微信小程序风实时记分工具</text>
+        <text class="hero-title">牌友记分</text>
+        <text class="hero-sub">更快进桌，更轻松同步，更适合熟人局的移动端记分体验。</text>
+      </view>
+      <view class="hero-pills">
+        <text class="hero-pill blue">手机号登录</text>
+        <text class="hero-pill pink">实时同步</text>
+        <text class="hero-pill mint">H5 即开即用</text>
       </view>
     </view>
 
-    <!-- 登录注册卡片 -->
-    <view class="macaron-card form-card">
+    <view class="macaron-card auth-card">
       <view class="mode-switch">
-        <view class="switch-bg" :class="{ 'is-right': isRegister }"></view>
+        <view class="switch-track" :class="{ 'is-right': isRegister }"></view>
         <view class="switch-item" :class="{ active: !isRegister }" @click="setMode(false)">登录</view>
         <view class="switch-item" :class="{ active: isRegister }" @click="setMode(true)">注册</view>
       </view>
 
-      <view v-if="!isRegister && hasSavedAccount" class="welcome-strip">
-        <text class="welcome-text">欢迎回来，已帮你填好上次的账号</text>
+      <view class="panel-head">
+        <text class="panel-title">{{ isRegister ? '创建新账号' : '欢迎回来' }}</text>
+        <text class="panel-sub">{{ isRegister ? '用手机号和昵称快速开账号' : '继续你上次的牌局节奏' }}</text>
+      </view>
+
+      <view v-if="!isRegister && hasSavedAccount" class="saved-tip">
+        <view class="saved-dot"></view>
+        <text class="saved-text">已自动填充上次记住的账号</text>
       </view>
 
       <view class="form-body">
-        <view class="input-wrap">
-          <text class="input-icon">📱</text>
-          <input 
-            class="macaron-input" 
-            v-model.trim="phone" 
-            type="number" 
-            maxlength="11" 
-            placeholder="手机号" 
-            placeholder-class="macaron-input-placeholder"
-          />
+        <view class="field-card">
+          <text class="field-label">手机号</text>
+          <view class="field-input">
+            <text class="field-icon">01</text>
+            <input
+              class="macaron-input clear-field"
+              v-model.trim="phone"
+              type="number"
+              maxlength="11"
+              placeholder="输入 11 位手机号"
+              placeholder-class="macaron-input-placeholder"
+            />
+          </view>
         </view>
 
-        <view class="input-wrap">
-          <text class="input-icon">🔒</text>
-          <input 
-            class="macaron-input" 
-            v-model="password" 
-            password 
-            placeholder="密码" 
-            placeholder-class="macaron-input-placeholder"
-          />
+        <view class="field-card">
+          <text class="field-label">密码</text>
+          <view class="field-input">
+            <text class="field-icon">02</text>
+            <input
+              class="macaron-input clear-field"
+              v-model="password"
+              password
+              placeholder="至少 6 位密码"
+              placeholder-class="macaron-input-placeholder"
+            />
+          </view>
         </view>
 
         <block v-if="isRegister">
-          <view class="input-wrap">
-            <text class="input-icon">✨</text>
-            <input 
-              class="macaron-input" 
-              v-model="confirmPassword" 
-              password 
-              placeholder="确认密码" 
-              placeholder-class="macaron-input-placeholder"
-            />
+          <view class="field-card">
+            <text class="field-label">确认密码</text>
+            <view class="field-input">
+              <text class="field-icon">03</text>
+              <input
+                class="macaron-input clear-field"
+                v-model="confirmPassword"
+                password
+                placeholder="再次输入密码"
+                placeholder-class="macaron-input-placeholder"
+              />
+            </view>
           </view>
-          <view class="input-wrap">
-            <text class="input-icon">👻</text>
-            <input 
-              class="macaron-input" 
-              v-model.trim="nickName" 
-              placeholder="给自己起个响亮的昵称" 
-              placeholder-class="macaron-input-placeholder"
-            />
+
+          <view class="field-card">
+            <text class="field-label">昵称</text>
+            <view class="field-input">
+              <text class="field-icon">04</text>
+              <input
+                class="macaron-input clear-field"
+                v-model.trim="nickName"
+                placeholder="房间里大家看到的名字"
+                placeholder-class="macaron-input-placeholder"
+              />
+            </view>
           </view>
         </block>
 
-        <button 
-          class="macaron-btn submit-btn" 
-          :class="{ pink: isRegister }" 
-          :loading="loading" 
+        <view v-if="!isRegister" class="helper-row">
+          <view class="remember-wrap" @click="toggleRemember">
+            <view class="remember-box" :class="{ active: rememberPwd }">
+              <text>{{ rememberPwd ? '✓' : '' }}</text>
+            </view>
+            <text class="remember-text">记住密码</text>
+          </view>
+          <text class="helper-link" @click="goToForgotPassword">找回密码</text>
+        </view>
+
+        <button
+          class="macaron-btn submit-btn"
+          :class="{ pink: isRegister }"
+          :loading="loading"
           @click="handlePhoneAuth"
         >
-          {{ isRegister ? '开 始 注 册 🚀' : '进 入 牌 局 🎉' }}
+          {{ isRegister ? '立即注册' : '进入首页' }}
         </button>
-        
-        <!-- 记住密码 -->
-        <view v-if="!isRegister" class="remember-wrap" @click="toggleRemember">
-          <view class="checkbox-icon">
-            <text v-if="rememberPwd">✅</text>
-            <text v-else>⬜</text>
-          </view>
-          <text class="remember-text">记住密码</text>
-        </view>
       </view>
 
-      <view v-if="!isRegister" class="action-links">
-        <text class="link-text" @click="goToForgotPassword">忘记密码咯？</text>
+      <view class="panel-foot">
+        <view class="foot-item">
+          <text class="foot-k">安全</text>
+          <text class="foot-v">账号独立保存</text>
+        </view>
+        <view class="foot-item">
+          <text class="foot-k">体验</text>
+          <text class="foot-v">按钮与操作为 H5 优化</text>
+        </view>
       </view>
     </view>
   </view>
@@ -225,159 +255,173 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .login-page {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
-  padding: calc(env(safe-area-inset-top) + 60rpx) 40rpx 40rpx;
-  background: transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 26rpx;
 }
 
-/* 背景装饰图形 */
-.bg-shape {
+.bg-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(24rpx);
   z-index: 0;
-  opacity: 0.82;
-}
-.shape-1 {
-  width: 430rpx;
-  height: 430rpx;
-  background: radial-gradient(circle, rgba(255, 179, 186, 0.95) 0%, rgba(255, 223, 226, 0.48) 62%, rgba(255,255,255,0) 100%);
-  top: -120rpx;
-  right: -110rpx;
-}
-.shape-2 {
-  width: 520rpx;
-  height: 520rpx;
-  background: radial-gradient(circle, rgba(160, 196, 255, 0.98) 0%, rgba(212, 228, 255, 0.54) 64%, rgba(255,255,255,0) 100%);
-  bottom: -180rpx;
-  left: -160rpx;
-}
-.shape-3 {
-  width: 260rpx;
-  height: 260rpx;
-  background: radial-gradient(circle, rgba(255, 253, 150, 0.85) 0%, rgba(255, 253, 150, 0.08) 72%, rgba(255,255,255,0) 100%);
-  top: 220rpx;
-  left: 80rpx;
+  pointer-events: none;
+  filter: blur(18rpx);
 }
 
-.header-zone {
+.orb-left {
+  left: -140rpx;
+  top: 220rpx;
+  width: 360rpx;
+  height: 360rpx;
+  background: radial-gradient(circle, rgba(255, 141, 170, 0.3) 0%, rgba(255, 141, 170, 0) 72%);
+}
+
+.orb-right {
+  right: -120rpx;
+  top: 60rpx;
+  width: 420rpx;
+  height: 420rpx;
+  background: radial-gradient(circle, rgba(95, 140, 255, 0.24) 0%, rgba(95, 140, 255, 0) 74%);
+}
+
+.bg-grid {
+  position: absolute;
+  inset: 180rpx 0 auto;
+  height: 520rpx;
+  z-index: 0;
+  opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(95, 140, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 140, 255, 0.08) 1px, transparent 1px);
+  background-size: 28rpx 28rpx;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
+}
+
+.hero-panel {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-bottom: 48rpx;
-  margin-top: -52rpx;
+  gap: 20rpx;
+  padding: 8rpx 12rpx 0;
 }
 
-.logo-box {
-  width: 156rpx;
-  height: 156rpx;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255, 244, 248, 0.96));
-  border: 2rpx solid rgba(255,255,255,0.88);
-  border-radius: 48rpx;
+.hero-mark {
+  width: 148rpx;
+  height: 148rpx;
+  border-radius: 44rpx;
+  padding: 8rpx;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.32));
+  box-shadow: var(--shadow-sm);
+}
+
+.mark-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, var(--primary), var(--accent) 92%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 22rpx 54rpx rgba(255, 179, 186, 0.25),
-    0 10rpx 24rpx rgba(160, 196, 255, 0.15);
-  margin-bottom: 28rpx;
-  transform: rotate(-7deg);
-}
-.logo-icon {
-  font-size: 84rpx;
 }
 
-.brand-title {
-  font-size: 60rpx;
-  font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: 6rpx;
-  text-shadow: 0 8rpx 20rpx rgba(255, 179, 186, 0.24);
+.mark-text {
+  font-size: 38rpx;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 4rpx;
 }
 
-.brand-sub {
-  margin-top: 16rpx;
-  font-size: 28rpx;
-  color: #7c8594;
-  background: rgba(255,255,255,0.8);
-  padding: 12rpx 28rpx;
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.hero-tag {
+  align-self: flex-start;
+  padding: 10rpx 18rpx;
   border-radius: var(--radius-pill);
-  box-shadow: 0 10rpx 24rpx rgba(160, 196, 255, 0.16);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--primary-strong);
+  font-size: 22rpx;
+  font-weight: 800;
+  box-shadow: var(--shadow-xs);
 }
 
-.play-tags {
+.hero-title {
+  font-size: 68rpx;
+  line-height: 1.04;
+  font-weight: 900;
+  color: var(--text-strong);
+  letter-spacing: 2rpx;
+}
+
+.hero-sub {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: var(--text-sub);
+}
+
+.hero-pills {
   display: flex;
-  gap: 14rpx;
-  margin-top: 22rpx;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
-.play-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 150rpx;
-  padding: 12rpx 24rpx;
-  border-radius: 999rpx;
+.hero-pill {
+  padding: 10rpx 20rpx;
+  border-radius: var(--radius-pill);
   font-size: 22rpx;
   font-weight: 700;
-  box-shadow: 0 10rpx 24rpx rgba(160, 196, 255, 0.18);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow-xs);
 }
 
-.play-tag.pink {
-  background: linear-gradient(135deg, #ffd7df, #fff2f5);
-  color: #e7748a;
+.hero-pill.blue {
+  color: var(--primary-strong);
 }
 
-.play-tag.blue {
-  background: linear-gradient(135deg, #dce8ff, #f0f6ff);
-  color: #5b86db;
+.hero-pill.pink {
+  color: var(--accent-strong);
 }
 
-.form-card {
+.hero-pill.mint {
+  color: #13997a;
+}
+
+.auth-card {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 660rpx;
-  padding: 52rpx 42rpx 44rpx;
-  box-sizing: border-box;
-  border: 2rpx solid rgba(255,255,255,0.9);
-  background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(255, 250, 252, 0.95));
-  box-shadow:
-    0 32rpx 72rpx rgba(160, 196, 255, 0.2),
-    0 14rpx 32rpx rgba(255, 179, 186, 0.14);
+  padding: 30rpx;
+  background: var(--card-bg-accent);
 }
 
 .mode-switch {
   display: flex;
   position: relative;
-  background: linear-gradient(135deg, rgba(160, 196, 255, 0.16), rgba(255, 179, 186, 0.18));
-  border-radius: var(--radius-pill);
-  height: 96rpx;
-  margin-bottom: 50rpx;
   padding: 8rpx;
-  box-sizing: border-box;
+  background: rgba(240, 245, 255, 0.88);
+  border-radius: var(--radius-pill);
+  margin-bottom: 28rpx;
 }
 
-.switch-bg {
+.switch-track {
   position: absolute;
   top: 8rpx;
   left: 8rpx;
   width: calc(50% - 8rpx);
-  height: 80rpx;
-  background: linear-gradient(135deg, #ffffff, #fff8fb);
+  height: calc(100% - 16rpx);
+  background: linear-gradient(135deg, #ffffff, #fef4f8);
   border-radius: var(--radius-pill);
-  box-shadow: 0 10rpx 26rpx rgba(160, 196, 255, 0.2);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.24s ease;
 }
-.switch-bg.is-right {
+
+.switch-track.is-right {
   transform: translateX(100%);
 }
 
@@ -388,110 +432,186 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
-  font-weight: bold;
-  color: #8f99a7;
-  transition: color 0.3s;
+  min-height: 78rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  color: var(--text-sub);
 }
+
 .switch-item.active {
-  color: #4a4a4a;
+  color: var(--text-strong);
+}
+
+.panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 24rpx;
+}
+
+.panel-title {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+}
+
+.panel-sub {
+  font-size: 24rpx;
+  color: var(--text-sub);
 }
 
 .form-body {
   display: flex;
   flex-direction: column;
-  gap: 32rpx;
+  gap: 18rpx;
 }
 
-.welcome-strip {
-  margin: -18rpx 0 12rpx;
-  padding: 18rpx 22rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(135deg, rgba(255, 223, 226, 0.72), rgba(212, 228, 255, 0.72));
-  box-shadow: 0 10rpx 24rpx rgba(160, 196, 255, 0.12);
-  text-align: center;
+.saved-tip {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 24rpx;
+  padding: 18rpx 20rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-sub);
 }
 
-.welcome-text {
+.saved-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 0 8rpx rgba(52, 211, 171, 0.14);
+}
+
+.saved-text {
   font-size: 24rpx;
   font-weight: 700;
-  color: #6c7890;
 }
 
-.input-wrap {
-  position: relative;
-  background: linear-gradient(180deg, rgba(250, 251, 255, 0.96), rgba(255, 246, 249, 0.94));
-  border: 2rpx solid rgba(212, 228, 255, 0.78);
-  border-radius: 28rpx;
-  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.9);
+.field-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 22rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-xs);
 }
 
-.input-icon {
-  position: absolute;
-  left: 28rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 32rpx;
-  z-index: 1;
+.field-label {
+  font-size: 23rpx;
+  font-weight: 700;
+  color: var(--text-sub);
 }
 
-.input-wrap .macaron-input {
-  padding-left: 80rpx; /* 为图标留出空间 */
-  background: transparent !important;
+.field-input {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.field-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 20rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-field {
+  flex: 1;
   border: none !important;
   box-shadow: none !important;
-  height: 104rpx;
+  background: transparent !important;
+  min-height: 88rpx;
+  padding: 0 !important;
 }
 
-.submit-btn {
-  margin-top: 20rpx;
-  font-size: 34rpx;
-  letter-spacing: 2rpx;
-  width: 100%;
-  height: 104rpx;
-  border: none !important;
-  color: #fff !important;
-  background: linear-gradient(135deg, #8db7ff, #6f9cff) !important;
-  box-shadow: 0 20rpx 42rpx rgba(111, 156, 255, 0.34) !important;
-  justify-content: center !important;
-  align-items: center !important;
-  text-align: center !important;
-}
-
-.submit-btn.pink {
-  background: linear-gradient(135deg, #ffb3ba, #ff8da1) !important;
-  box-shadow: 0 20rpx 42rpx rgba(255, 141, 161, 0.3) !important;
+.helper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 8rpx 2rpx 6rpx;
 }
 
 .remember-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12rpx;
-  margin-top: 2rpx;
-  padding: 14rpx 20rpx;
-  border-radius: 999rpx;
-  background: rgba(255,255,255,0.72);
 }
-.checkbox-icon {
-  font-size: 28rpx;
+
+.remember-box {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid var(--divider);
+  background: rgba(255, 255, 255, 0.9);
+  color: transparent;
+  font-size: 24rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.remember-box.active {
+  border-color: rgba(95, 140, 255, 0.3);
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #fff;
+}
+
 .remember-text {
-  font-size: 26rpx;
-  color: #7d8796;
+  font-size: 24rpx;
+  color: var(--text-sub);
+  font-weight: 700;
 }
 
-.action-links {
-  margin-top: 34rpx;
-  text-align: center;
+.helper-link {
+  font-size: 24rpx;
+  color: var(--primary-strong);
+  font-weight: 800;
 }
 
-.link-text {
-  font-size: 26rpx;
-  color: #7c8dff;
-  font-weight: bold;
-  padding: 14rpx 24rpx;
-  background: rgba(220, 232, 255, 0.45);
-  border-radius: 999rpx;
+.submit-btn {
+  margin-top: 10rpx;
+  min-height: 102rpx;
+  font-size: 32rpx;
+}
+
+.panel-foot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14rpx;
+  margin-top: 24rpx;
+}
+
+.foot-item {
+  padding: 20rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.62);
+  border: 2rpx solid rgba(255, 255, 255, 0.66);
+}
+
+.foot-k {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-light);
+}
+
+.foot-v {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: var(--text-main);
 }
 </style>

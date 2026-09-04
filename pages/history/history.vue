@@ -1,12 +1,10 @@
 <template>
   <view class="history-page app-shell">
-    
-    <!-- 顶部导航 -->
     <view class="page-nav">
       <view class="nav-btn" @click="goBack">← 返回</view>
       <view class="nav-title">
         <text class="title-text">历史战绩</text>
-        <text class="sub-text">回看每一局的结果</text>
+        <text class="sub-text">回看每一局的结果和你的走势</text>
       </view>
       <view class="nav-btn right" @click="goToHome">首页</view>
     </view>
@@ -17,7 +15,7 @@
         <text class="macaron-badge blue" style="margin-left:auto">{{ archiveStatusText }}</text>
       </view>
       
-      <view class="stats-grid">
+      <view class="summary-grid">
         <view class="stat-box">
           <text class="s-val">{{ stats.totalGames }}</text>
           <text class="s-label">总场次</text>
@@ -84,14 +82,13 @@
       </view>
 
       <view v-else class="empty-state">
-        <view class="empty-icon">🤷‍♂️</view>
-        <view class="empty-text">还没有打过一局哦</view>
-        <view class="empty-sub">赶快去大厅开一桌吧！</view>
-        <button class="macaron-btn empty-btn" @click="goToHome">去 开 局 🚀</button>
+        <view class="empty-icon">🗂</view>
+        <view class="empty-text">还没有历史记录</view>
+        <view class="empty-sub">开完第一桌以后，这里会自动沉淀你的全部战绩。</view>
+        <button class="macaron-btn empty-btn" @click="goToHome">去开局</button>
       </view>
     </view>
 
-    <!-- 弹窗：确认操作 -->
     <view v-if="confirmPopup.visible" class="modal-mask" @click="closeConfirm">
       <view class="macaron-card modal-panel" @click.stop>
         <view class="modal-title">{{ confirmPopup.title || '提示' }}</view>
@@ -232,69 +229,36 @@ onMounted(loadData);
   flex-direction: column;
 }
 
-/* 顶部导航 */
-.page-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 10rpx 30rpx;
-}
-.nav-btn {
-  font-size: 28rpx;
-  color: var(--secondary);
-  font-weight: bold;
-  padding: 10rpx;
-  &.right { text-align: right; }
-}
-.nav-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.title-text {
-  font-size: 34rpx;
-  font-weight: 800;
-  color: var(--text-main);
-}
-.sub-text {
-  font-size: 22rpx;
-  color: var(--text-sub);
-}
-
-.card-title {
-  font-size: 32rpx;
-  font-weight: 800;
-  margin-bottom: 24rpx;
-  display: flex;
-  align-items: center;
-}
-
 .summary-card {
-  background: linear-gradient(135deg, #fff, #fef2f2);
+  background: var(--card-bg-accent);
 }
 
-.stats-grid {
-  display: flex;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20rpx;
   margin-bottom: 24rpx;
 }
+
 .stat-box {
-  flex: 1;
-  background: rgba(255,255,255,0.6);
-  padding: 24rpx 16rpx;
+  padding: 24rpx 18rpx;
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.02);
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-xs);
 }
+
 .s-val {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 900;
-  color: var(--text-main);
+  color: var(--text-strong);
 }
-.s-val.positive { color: #f43f5e; }
-.s-val.negative { color: #10b981; }
+.s-val.positive { color: var(--accent-strong); }
+.s-val.negative { color: #109c7a; }
 .s-label {
   font-size: 22rpx;
   color: var(--text-sub);
@@ -305,21 +269,33 @@ onMounted(loadData);
   display: flex;
   gap: 20rpx;
 }
+
 .insight-item {
   flex: 1;
-  background: #F8FAFC;
+  background: rgba(255, 255, 255, 0.72);
   padding: 20rpx;
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
+  border: 2rpx solid var(--divider);
 }
-.i-label { font-size: 22rpx; color: var(--text-sub); }
-.i-val { font-size: 28rpx; font-weight: bold; color: var(--text-main); margin-top: 6rpx; }
+
+.i-label {
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.i-val {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 6rpx;
+}
 
 .clear-btn {
   margin-left: auto;
   width: auto;
-  height: 60rpx;
+  min-height: 60rpx;
   padding: 0 24rpx;
   font-size: 24rpx;
 }
@@ -327,28 +303,33 @@ onMounted(loadData);
 .record-list {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 18rpx;
 }
+
 .record-item {
-  background: #F8FAFC;
+  background: rgba(255, 255, 255, 0.78);
   border-radius: var(--radius-md);
   padding: 24rpx;
-  border: 2rpx solid transparent;
-  transition: transform 0.2s;
+  border: 2rpx solid var(--divider);
+  transition: transform 0.18s ease;
 }
+
 .record-item:active {
-  transform: scale(0.98);
+  transform: translateY(2rpx);
 }
+
 .record-item.win {
-  background: #FFF0F2;
-  border-color: #FFE4E6;
+  background: linear-gradient(135deg, rgba(255, 140, 171, 0.09), rgba(255, 255, 255, 0.84));
+  border-color: rgba(255, 140, 171, 0.16);
 }
+
 .record-item.lose {
-  background: #F0FDF4;
-  border-color: #D1FAE5;
+  background: linear-gradient(135deg, rgba(52, 211, 171, 0.08), rgba(255, 255, 255, 0.84));
+  border-color: rgba(52, 211, 171, 0.16);
 }
+
 .record-item.draw {
-  background: #F8FAFC;
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .r-head {
@@ -360,7 +341,7 @@ onMounted(loadData);
 .r-title {
   font-size: 30rpx;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--text-strong);
   display: block;
 }
 .r-time {
@@ -371,13 +352,13 @@ onMounted(loadData);
 }
 .r-result {
   font-size: 24rpx;
-  font-weight: bold;
+  font-weight: 800;
   padding: 8rpx 20rpx;
   border-radius: var(--radius-pill);
 }
-.r-result.win { background: #FFE4E6; color: #E11D48; }
-.r-result.lose { background: #D1FAE5; color: #059669; }
-.r-result.draw { background: #E2E8F0; color: #475569; }
+.r-result.win { background: var(--accent-soft); color: var(--accent-strong); }
+.r-result.lose { background: var(--mint-soft); color: #109c7a; }
+.r-result.draw { background: #e9eef9; color: #55647d; }
 
 .r-body {
   display: flex;
@@ -387,18 +368,19 @@ onMounted(loadData);
 .r-data {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 .r-score {
   font-size: 48rpx;
   font-weight: 900;
   line-height: 1;
 }
-.r-score.win { color: #E11D48; }
-.r-score.lose { color: #059669; }
+.r-score.win { color: var(--accent-strong); }
+.r-score.lose { color: #109c7a; }
 .r-score.draw { color: #475569; }
 .r-rank {
   font-size: 24rpx;
-  font-weight: bold;
+  font-weight: 800;
   color: var(--text-main);
   margin-top: 10rpx;
 }
@@ -423,21 +405,31 @@ onMounted(loadData);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 0;
+  padding: 70rpx 0 50rpx;
 }
 .empty-icon {
-  font-size: 100rpx;
-  margin-bottom: 20rpx;
+  width: 136rpx;
+  height: 136rpx;
+  border-radius: 42rpx;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 68rpx;
+  margin-bottom: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .empty-text {
   font-size: 32rpx;
-  font-weight: bold;
-  color: var(--text-main);
+  font-weight: 800;
+  color: var(--text-strong);
 }
 .empty-sub {
   font-size: 24rpx;
   color: var(--text-sub);
   margin-top: 10rpx;
+  text-align: center;
+  line-height: 1.7;
 }
 .empty-btn {
   margin-top: 40rpx;

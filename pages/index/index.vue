@@ -1,61 +1,80 @@
 <template>
   <view class="index-page app-shell">
-    
-    <!-- 顶部个人信息卡片 -->
-    <view class="macaron-card user-card">
-      <view class="user-header">
-        <image class="avatar" :src="userInfo.avatarUrl || defaultAvatar"></image>
-        <view class="user-info">
-          <view class="name-row">
-            <text class="nickname">{{ userInfo.nickName || '牌局玩家' }}</text>
-            <text class="macaron-badge yellow" v-if="userInfo.phone">{{ userInfo.phone }}</text>
-            <text class="macaron-badge blue" v-else>未绑定手机</text>
+    <view class="macaron-card home-hero">
+      <view class="hero-top">
+        <view class="hero-user">
+          <image class="avatar" :src="userInfo.avatarUrl || defaultAvatar"></image>
+          <view class="user-copy">
+            <view class="name-row">
+              <text class="nickname">{{ userInfo.nickName || '牌局玩家' }}</text>
+              <text class="macaron-badge yellow" v-if="userInfo.phone">{{ userInfo.phone }}</text>
+              <text class="macaron-badge blue" v-else>未绑定手机</text>
+            </view>
+            <text class="hero-caption">熟人局记分 · 小程序风操作体验</text>
           </view>
         </view>
-        <view class="setting-btn" @click="settingsPopup = true">⚙️</view>
+        <button class="setting-btn" @click="settingsPopup = true">设置</button>
       </view>
       
-      <view class="greeting">
-        <text class="greeting-title">{{ greetingTitle }}</text>
-        <text class="greeting-sub">{{ dashboardSubtitle }}</text>
+      <view class="hero-body">
+        <view class="hero-copy-block">
+          <text class="greeting-title">{{ greetingTitle }}</text>
+          <text class="greeting-sub">{{ dashboardSubtitle }}</text>
+        </view>
+        <view class="hero-mini-stats">
+          <view class="mini-stat">
+            <text class="mini-k">总场次</text>
+            <text class="mini-v">{{ stats.totalGames }}</text>
+          </view>
+          <view class="mini-stat">
+            <text class="mini-k">总积分</text>
+            <text class="mini-v" :class="{ positive: stats.totalScore > 0, negative: stats.totalScore < 0 }">
+              {{ stats.totalScore > 0 ? '+' : '' }}{{ stats.totalScore }}
+            </text>
+          </view>
+        </view>
       </view>
     </view>
 
-    <!-- 核心操作区 -->
+    <view class="section-head">
+      <text class="section-title">快速开局</text>
+      <text class="section-desc">创建房间或直接输入房间号进桌</text>
+    </view>
+
     <view class="action-grid">
       <view class="action-card create-box" @click="createRoom">
         <view class="action-icon">🎲</view>
         <text class="action-title">创建房间</text>
-        <text class="action-desc">当房主，拉好友</text>
+        <text class="action-desc">你当房主，直接拉人开打</text>
+        <view class="action-chip">推荐从这里开始</view>
       </view>
       
       <view class="action-card join-box" @click="joinPopup = true">
         <view class="action-icon">🚀</view>
         <text class="action-title">加入牌局</text>
-        <text class="action-desc">输入房间号</text>
+        <text class="action-desc">输入房间号或粘贴邀请链接</text>
+        <view class="action-chip pink">支持剪贴板识别</view>
       </view>
     </view>
     
-    <!-- 正在进行的房间提示 -->
     <view v-if="activeRoomId" class="macaron-card active-room-card">
       <view class="active-content" @click="returnToActiveRoom">
-        <text class="active-icon">🔥</text>
+        <text class="active-icon">⏺</text>
         <view class="active-text">
-          <text class="active-title">你有正在进行的牌局</text>
-          <text class="active-desc">房间号: {{ activeRoomId }}</text>
+          <text class="active-title">你有一桌正在进行中</text>
+          <text class="active-desc">房间号 {{ activeRoomId }}，现在回去可以继续记分</text>
         </view>
       </view>
       <view class="active-actions">
-        <button v-if="activeRoomIsCreator" class="macaron-btn ghost small end-btn" @click.stop="quickEndRoom">结束</button>
-        <view class="active-arrow" @click="returnToActiveRoom">回桌 ></view>
+        <button v-if="activeRoomIsCreator" class="macaron-btn ghost small end-btn" @click.stop="quickEndRoom">结束对局</button>
+        <view class="active-arrow" @click="returnToActiveRoom">回到牌桌</view>
       </view>
     </view>
 
-    <!-- 数据统计卡片 -->
     <view class="macaron-card stats-card">
       <view class="card-title">
         <text class="icon">📊</text> 我的战绩
-        <text class="more-link" @click="goToHistory">查看全部 ></text>
+        <text class="more-link" @click="goToHistory">全部记录</text>
       </view>
       
       <view class="stats-grid">
@@ -86,11 +105,30 @@
       </view>
     </view>
 
-    <!-- 弹窗：加入房间 -->
+    <view class="macaron-card helper-card">
+      <view class="card-title">
+        <text class="icon">💡</text> 使用提示
+      </view>
+      <view class="helper-list">
+        <view class="helper-item">
+          <text class="helper-index">01</text>
+          <text class="helper-text">先创建房间，再把链接或房间号发给朋友。</text>
+        </view>
+        <view class="helper-item">
+          <text class="helper-index">02</text>
+          <text class="helper-text">关闭 H5 后重新进入，首页会优先提示正在进行的牌局。</text>
+        </view>
+        <view class="helper-item">
+          <text class="helper-index">03</text>
+          <text class="helper-text">房主可在首页直接结束未结算牌局，历史会自动同步。</text>
+        </view>
+      </view>
+    </view>
+
     <view v-if="joinPopup" class="modal-mask" @click="joinPopup = false">
       <view class="macaron-card modal-panel" @click.stop>
-        <view class="modal-title">加入房间 🚀</view>
-        <view class="modal-desc">输入朋友分享的房间号或者链接</view>
+        <view class="modal-title">加入房间</view>
+        <view class="modal-desc">支持直接输入房间号，也支持粘贴邀请链接自动识别。</view>
         <input
           v-model.trim="joinInput"
           class="macaron-input"
@@ -100,12 +138,11 @@
         />
         <view class="modal-actions">
           <button class="macaron-btn ghost" @click="pasteLink">剪贴板识别</button>
-          <button class="macaron-btn" @click="joinRoom">确 认</button>
+          <button class="macaron-btn" @click="joinRoom">确认加入</button>
         </view>
       </view>
     </view>
 
-    <!-- 弹窗：设置菜单 -->
     <view v-if="settingsPopup" class="modal-mask" @click="settingsPopup = false">
       <view class="macaron-card modal-panel sheet-panel" @click.stop>
         <view class="sheet-handle"></view>
@@ -141,7 +178,6 @@
       </view>
     </view>
 
-    <!-- 弹窗：修改昵称 -->
     <view v-if="nicknamePopup" class="modal-mask" @click="nicknamePopup = false">
       <view class="macaron-card modal-panel" @click.stop>
         <view class="modal-title">修改昵称</view>
@@ -153,7 +189,6 @@
       </view>
     </view>
 
-    <!-- 弹窗：修改密码 -->
     <view v-if="passwordPopup" class="modal-mask" @click="passwordPopup = false">
       <view class="macaron-card modal-panel" @click.stop>
         <view class="modal-title">修改密码</view>
@@ -169,7 +204,6 @@
       </view>
     </view>
 
-    <!-- 弹窗：确认操作 -->
     <view v-if="confirmPopup.visible" class="modal-mask" @click="closeConfirm">
       <view class="macaron-card modal-panel" @click.stop>
         <view class="modal-title">{{ confirmPopup.title || '提示' }}</view>
@@ -494,206 +528,312 @@ onShow(loadDashboard);
   flex-direction: column;
 }
 
-.user-card {
-  background: linear-gradient(135deg, #fff, #f0f7ff);
+.home-hero {
+  padding: 30rpx;
+  background: var(--card-bg-accent);
 }
-.user-header {
+
+.hero-top {
   display: flex;
   align-items: center;
-  margin-bottom: 24rpx;
+  justify-content: space-between;
+  gap: 20rpx;
 }
-.avatar {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 32rpx;
-  background: var(--border-color);
-  margin-right: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
-}
-.user-info {
+
+.hero-user {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
 }
+
+.avatar {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 34rpx;
+  background: var(--border-color);
+  box-shadow: var(--shadow-xs);
+}
+
+.user-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .name-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  margin-bottom: 8rpx;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
+
 .nickname {
   font-size: 36rpx;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--text-strong);
 }
-.phone {
+
+.hero-caption {
+  display: block;
+  margin-top: 10rpx;
   font-size: 24rpx;
   color: var(--text-sub);
 }
+
 .setting-btn {
-  font-size: 40rpx;
-  padding: 10rpx;
-  opacity: 0.8;
+  min-width: 120rpx;
+  min-height: 68rpx;
+  padding: 0 20rpx;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--primary-strong);
+  font-size: 24rpx;
+  font-weight: 800;
+  box-shadow: var(--shadow-xs);
+}
+
+.hero-body {
+  display: flex;
+  align-items: stretch;
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.hero-copy-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .greeting-title {
   display: block;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: var(--text-main);
-  margin-bottom: 8rpx;
-}
-.greeting-sub {
-  font-size: 26rpx;
-  color: var(--text-sub);
+  font-size: 34rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+  line-height: 1.35;
 }
 
-.action-grid {
-  display: flex;
-  gap: 24rpx;
-  margin-bottom: 28rpx;
+.greeting-sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: var(--text-sub);
+  line-height: 1.6;
 }
-.action-card {
-  flex: 1;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  padding: 32rpx 24rpx;
+
+.hero-mini-stats {
+  width: 220rpx;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  border: 2rpx solid rgba(220, 229, 246, 0.72);
-  box-shadow: var(--shadow-md);
-  transition: transform 0.2s;
+  gap: 14rpx;
 }
-.action-card:active {
-  transform: scale(0.96);
+
+.mini-stat {
+  flex: 1;
+  padding: 18rpx 20rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
 }
-.create-box {
-  background: var(--surface-soft-blue);
-}
-.join-box {
-  background: var(--surface-soft-pink);
-}
-.action-icon {
-  font-size: 64rpx;
-  margin-bottom: 16rpx;
-}
-.action-title {
-  font-size: 32rpx;
-  font-weight: 800;
-  color: var(--text-main);
-  margin-bottom: 8rpx;
-}
-.action-desc {
+
+.mini-k {
+  display: block;
   font-size: 22rpx;
   color: var(--text-sub);
 }
 
+.mini-v {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 34rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+}
+
+.mini-v.positive {
+  color: var(--accent-strong);
+}
+
+.mini-v.negative {
+  color: #109c7a;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24rpx;
+  margin-bottom: 28rpx;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 30rpx 26rpx;
+  border-radius: var(--radius-lg);
+  transition: transform 0.18s ease;
+}
+
+.action-card:active {
+  transform: translateY(4rpx);
+}
+
+.create-box {
+  background: var(--surface-blue);
+}
+
+.join-box {
+  background: var(--surface-pink);
+}
+
+.action-icon {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 30rpx;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-xs);
+  font-size: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+}
+
+.action-desc {
+  font-size: 24rpx;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.action-chip {
+  margin-top: auto;
+  padding: 10rpx 18rpx;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--primary-strong);
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.action-chip.pink {
+  color: var(--accent-strong);
+}
+
 .active-room-card {
-  background: linear-gradient(135deg, #FFF0F2, #FFFDF0);
-  border: 2rpx solid #FFDFE2;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 30rpx;
+  gap: 20rpx;
+  padding: 28rpx;
   margin-bottom: 28rpx;
-  animation: pulse 2s infinite;
+  background: linear-gradient(135deg, rgba(255, 140, 171, 0.11), rgba(255, 204, 106, 0.14) 72%, rgba(255, 255, 255, 0.92));
 }
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 179, 186, 0.4); }
-  70% { box-shadow: 0 0 0 16rpx rgba(255, 179, 186, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 179, 186, 0); }
-}
+
 .active-content {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 20rpx;
 }
+
 .active-icon {
-  font-size: 48rpx;
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--accent-strong);
+  font-size: 34rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .active-text {
   display: flex;
   flex-direction: column;
+  gap: 8rpx;
 }
+
 .active-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #f43f5e;
+  font-size: 30rpx;
+  font-weight: 900;
+  color: var(--text-strong);
 }
+
 .active-desc {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--text-sub);
-  margin-top: 4rpx;
+  line-height: 1.5;
 }
+
 .active-actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
 }
+
 .end-btn {
-  color: #f43f5e;
-  border: 1rpx solid #f43f5e;
-  background: rgba(244, 63, 94, 0.05);
+  color: var(--accent-strong);
+  border: 2rpx solid rgba(245, 111, 149, 0.18);
+  background: rgba(255, 255, 255, 0.76);
   font-size: 22rpx;
-  padding: 6rpx 20rpx;
+  min-width: 156rpx;
 }
+
 .active-arrow {
   font-size: 24rpx;
-  color: #f43f5e;
-  font-weight: bold;
-  background: rgba(244, 63, 94, 0.1);
-  padding: 8rpx 20rpx;
+  color: var(--primary-strong);
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.76);
+  min-height: 64rpx;
+  padding: 0 22rpx;
   border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .stats-card {
   flex: 1;
 }
-.card-title {
-  font-size: 32rpx;
-  font-weight: 800;
+
+.stat-item {
   display: flex;
-  align-items: center;
-  margin-bottom: 30rpx;
-  .icon { margin-right: 12rpx; }
-  .more-link {
-    margin-left: auto;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-num {
+  font-size: 42rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+  margin-bottom: 8rpx;
+  &.positive { color: var(--accent-strong); }
+  &.negative { color: #109c7a; }
+  .unit {
     font-size: 24rpx;
-    color: var(--secondary-strong);
+    margin-left: 4rpx;
     font-weight: 700;
   }
 }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx;
-  margin-bottom: 32rpx;
-}
-.stat-item {
-  background: linear-gradient(180deg, #f9fbff, #ffffff);
-  border-radius: var(--radius-md);
-  padding: 24rpx;
-  display: flex;
-  flex-direction: column;
-  border: 2rpx solid rgba(217, 228, 247, 0.72);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.85);
-}
-.stat-num {
-  font-size: 40rpx;
-  font-weight: 900;
-  color: var(--text-main);
-  margin-bottom: 8rpx;
-  &.positive { color: #f43f5e; } /* 赢了用粉红色醒目 */
-  &.negative { color: #10b981; }
-  .unit { font-size: 24rpx; margin-left: 4rpx; font-weight: normal; }
-}
+
 .stat-label {
   font-size: 24rpx;
   color: var(--text-sub);
 }
 
 .rhythm-box {
-  background: linear-gradient(135deg, #fff6f8, #fffdfd);
-  border-radius: var(--radius-md);
   padding: 24rpx;
   display: flex;
   align-items: center;
@@ -704,7 +844,7 @@ onShow(loadDashboard);
 }
 .rhythm-label {
   font-size: 26rpx;
-  font-weight: bold;
+  font-weight: 800;
   color: var(--text-main);
 }
 .rhythm-desc {
@@ -714,14 +854,52 @@ onShow(loadDashboard);
   margin-top: 8rpx;
 }
 
-/* 弹窗：加入房间 (依赖全局样式) */
+.helper-card {
+  margin-bottom: 0;
+}
+
+.helper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.helper-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 22rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid var(--divider);
+}
+
+.helper-index {
+  width: 50rpx;
+  height: 50rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 20rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.helper-text {
+  flex: 1;
+  font-size: 25rpx;
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
 .input-group {
   display: flex;
   flex-direction: column;
   gap: 20rpx;
 }
 
-/* 底部上拉菜单 */
 .sheet-panel {
   margin-top: auto;
   border-bottom-left-radius: 0;
@@ -745,20 +923,17 @@ onShow(loadDashboard);
   display: flex;
   align-items: center;
   padding: 24rpx;
-  background: linear-gradient(180deg, #f9fbff, #ffffff);
   border-radius: var(--radius-md);
-  transition: background 0.2s;
-  border: 2rpx solid rgba(220, 229, 246, 0.72);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 0.74);
 }
 .setting-item:active {
-  background: #f4f8ff;
+  transform: scale(0.99);
 }
 .setting-item.danger {
-  background: linear-gradient(135deg, #fff3f5, #fffafb);
+  background: rgba(255, 240, 244, 0.84);
 }
 .setting-item.danger .st-title {
-  color: #E11D48;
+  color: #d63b69;
 }
 .setting-icon {
   font-size: 40rpx;
@@ -771,7 +946,7 @@ onShow(loadDashboard);
 }
 .st-title {
   font-size: 28rpx;
-  font-weight: bold;
+  font-weight: 800;
   color: var(--text-main);
 }
 .st-desc {

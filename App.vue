@@ -7,15 +7,11 @@
 @import "uview-plus/index.scss";
 @import "./styles/theme.scss";
 
-/* 全局基础样式补充 */
 html,
 body,
 #app {
   min-height: 100%;
-  background:
-    radial-gradient(circle at top right, rgba(255, 188, 204, 0.58), transparent 24%),
-    radial-gradient(circle at left 18%, rgba(193, 219, 255, 0.48), transparent 26%),
-    linear-gradient(180deg, #fffafc 0%, #f8fbff 56%, #f1f6ff 100%);
+  background: var(--app-bg);
 }
 
 body {
@@ -23,9 +19,42 @@ body {
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-attachment: fixed;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(18px);
+}
+
+body::before {
+  top: -120px;
+  right: -90px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(255, 154, 181, 0.26) 0%, rgba(255, 154, 181, 0) 72%);
+}
+
+body::after {
+  left: -120px;
+  bottom: 8%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(95, 140, 255, 0.18) 0%, rgba(95, 140, 255, 0) 76%);
 }
 
 page {
   background: transparent;
+}
+
+#app {
+  position: relative;
+  isolation: isolate;
 }
 </style>

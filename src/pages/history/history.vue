@@ -1,90 +1,119 @@
 <template>
   <view class="history-page app-shell">
-    <view class="overview-card glass-card">
-      <view class="overview-head">
-        <view>
-          <view class="panel-label">History Archive</view>
-          <view class="section-title">战绩归档</view>
-          <view class="section-desc">只看结果，回看更快。</view>
+    <view class="page-nav">
+      <view class="nav-btn" @click="goBack">← 返回</view>
+      <view class="nav-title">
+        <text class="title-text">历史战绩</text>
+        <text class="sub-text">回看每一局的结果和你的走势</text>
+      </view>
+      <view class="nav-btn right" @click="goToHome">首页</view>
+    </view>
+
+    <view class="macaron-card summary-card">
+      <view class="card-title">
+        📈 生涯概览
+        <text class="macaron-badge blue" style="margin-left:auto">{{ archiveStatusText }}</text>
+      </view>
+      
+      <view class="summary-grid">
+        <view class="stat-box">
+          <text class="s-val">{{ stats.totalGames }}</text>
+          <text class="s-label">总场次</text>
         </view>
-        <text class="archive-pill">{{ archiveStatusText }}</text>
+        <view class="stat-box">
+          <text class="s-val">{{ stats.winRate }}%</text>
+          <text class="s-label">胜率</text>
+        </view>
+        <view class="stat-box">
+          <text class="s-val" :class="{ positive: stats.bestScore > 0, negative: stats.bestScore < 0 }">
+            {{ formatSignedScore(stats.bestScore) }}
+          </text>
+          <text class="s-label">最佳得分</text>
+        </view>
       </view>
 
-      <view class="stats-grid">
-        <view class="metric-card stat-box">
-          <text class="metric-label">总场次</text>
-          <text class="metric-value">{{ stats.totalGames }}</text>
+      <view class="insight-row">
+        <view class="insight-item">
+          <text class="i-label">最近表现</text>
+          <text class="i-val">{{ latestResultText }}</text>
         </view>
-        <view class="metric-card stat-box">
-          <text class="metric-label">胜率</text>
-          <text class="metric-value">{{ stats.winRate }}%</text>
-        </view>
-        <view class="metric-card stat-box">
-          <text class="metric-label">最佳积分</text>
-          <text class="metric-value">{{ formatSignedScore(stats.bestScore) }}</text>
+        <view class="insight-item">
+          <text class="i-label">当前连胜</text>
+          <text class="i-val">{{ streakText }}</text>
         </view>
       </view>
     </view>
 
-    <view class="history-card glass-card">
-      <view class="panel-head">
-        <view>
-          <view class="panel-label">Finished Rooms</view>
-          <view class="section-title">最近结果</view>
-        </view>
-        <button class="secondary-button compact-danger" @click="clearHistory">清空记录</button>
+    <view class="macaron-card records-card">
+      <view class="card-title">
+        🗂️ 战绩列表
+        <button class="macaron-btn ghost small clear-btn" @click="clearHistory">清空</button>
       </view>
 
-      <view v-if="historyRecords.length" class="history-list">
-        <view v-for="record in historyRecords" :key="`${record.roomId}_${record.rank}`" class="record-card" :class="record.result">
-          <view class="record-head">
-            <view class="record-copy">
-              <view class="record-kicker">{{ record.time }}</view>
-              <view class="record-title">{{ record.roomTitle || '好友牌局' }}</view>
-              <view class="record-meta">房间 {{ record.roomId }} · {{ record.playerCount }} 人</view>
+      <view v-if="historyRecords.length" class="record-list">
+        <view 
+          v-for="record in historyRecords" 
+          :key="`${record.roomId}_${record.rank}`" 
+          class="record-item"
+          :class="record.result"
+        >
+          <view class="r-head">
+            <view class="r-info">
+              <text class="r-title">{{ record.roomTitle || '好友牌局' }}</text>
+              <text class="r-time">{{ record.time }}</text>
             </view>
-            <view class="record-summary">
-              <view class="record-result" :class="record.result">{{ resultTextMap[record.result] }}</view>
-              <text class="record-score" :class="record.result">{{ formatSignedScore(record.score) }}</text>
+            <view class="r-result" :class="record.result">
+              {{ resultTextMap[record.result] }}
             </view>
           </view>
-
-          <view class="record-grid">
-            <view class="metric-card record-metric">
-              <text class="metric-label">排名</text>
-              <text class="metric-value">#{{ record.rank }}</text>
+          
+          <view class="r-body">
+            <view class="r-data">
+              <text class="r-score" :class="record.result">{{ formatSignedScore(record.score) }}</text>
+              <text class="r-rank">第 {{ record.rank }} 名</text>
             </view>
-            <view class="metric-card record-metric">
-              <text class="metric-label">记分</text>
-              <text class="metric-value">{{ record.scoreChanges }}</text>
-            </view>
-            <view class="metric-card record-metric wide">
-              <text class="metric-label">同桌玩家</text>
-              <text class="record-opponents">{{ getOpponentsText(record.opponents) }}</text>
+            <view class="r-meta">
+              <text>记分次数：{{ record.scoreChanges }} 次</text>
+              <text>房间号：{{ record.roomId }}</text>
+              <text class="r-opponents">同桌：{{ getOpponentsText(record.opponents) }}</text>
             </view>
           </view>
         </view>
       </view>
 
       <view v-else class="empty-state">
-        <view class="empty-mark">战绩</view>
-        <view class="empty-title">还没有归档</view>
-        <view class="empty-desc">打完一局，这里自动出现。</view>
-        <button class="primary-button empty-button" @click="goToHome">去开一局</button>
+        <view class="empty-icon">🗂</view>
+        <view class="empty-text">还没有历史记录</view>
+        <view class="empty-sub">开完第一桌以后，这里会自动沉淀你的全部战绩。</view>
+        <button class="macaron-btn empty-btn" @click="goToHome">去开局</button>
       </view>
     </view>
+
+    <view v-if="confirmPopup.visible" class="modal-mask" @click="closeConfirm">
+      <view class="macaron-card modal-panel" @click.stop>
+        <view class="modal-title">{{ confirmPopup.title || '提示' }}</view>
+        <view class="modal-desc" style="font-size: 30rpx; margin-bottom: 40rpx; color: #4a4a4a;">
+          {{ confirmPopup.content }}
+        </view>
+        <view class="modal-actions">
+          <button class="macaron-btn ghost" @click="closeConfirm">取消</button>
+          <button class="macaron-btn" :class="{ pink: confirmPopup.isDanger }" @click="handleConfirm">确 定</button>
+        </view>
+      </view>
+    </view>
+
   </view>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { api } from '../../utils/api';
-import { redirectToLogin } from '../../utils/auth';
+import { navigateBackOrPage, reLaunchPage, redirectToLogin } from '../../utils/auth';
 
 const resultTextMap = {
-  win: '胜局',
-  lose: '失利',
-  draw: '平局'
+  win: '大胜',
+  lose: '落败',
+  draw: '平手'
 };
 
 const stats = ref({
@@ -97,7 +126,57 @@ const stats = ref({
 });
 
 const historyRecords = ref([]);
-const archiveStatusText = computed(() => (historyRecords.value.length ? '最近已归档' : '暂无归档'));
+
+const confirmPopup = ref({
+  visible: false,
+  title: '',
+  content: '',
+  isDanger: false,
+  onConfirm: null
+});
+
+const showConfirm = (title, content, onConfirm, isDanger = false) => {
+  confirmPopup.value = {
+    visible: true,
+    title,
+    content,
+    isDanger,
+    onConfirm
+  };
+};
+
+const closeConfirm = () => {
+  confirmPopup.value.visible = false;
+};
+
+const handleConfirm = () => {
+  if (confirmPopup.value.onConfirm) {
+    confirmPopup.value.onConfirm();
+  }
+  closeConfirm();
+};
+
+const archiveStatusText = computed(() => (historyRecords.value.length ? '已同步' : '暂无数据'));
+
+const latestRecord = computed(() => historyRecords.value[0] || null);
+
+const latestResultText = computed(() => {
+  if (!latestRecord.value) return '待开局';
+  return `${resultTextMap[latestRecord.value.result]} ${formatSignedScore(latestRecord.value.score)}`;
+});
+
+const streakText = computed(() => {
+  if (!historyRecords.value.length) return '还没开始';
+  let count = 0;
+  for (const item of historyRecords.value) {
+    if (item.result === 'win') {
+      count += 1;
+      continue;
+    }
+    break;
+  }
+  return count ? `${count} 连胜 🔥` : '等待下一波';
+});
 
 const requireAuth = () => {
   if (!uni.getStorageSync('token')) {
@@ -108,19 +187,15 @@ const requireAuth = () => {
 };
 
 const formatSignedScore = (value) => (value > 0 ? `+${value}` : `${value}`);
-const getOpponentsText = (opponents = []) => (opponents.length ? opponents.join('、') : '--');
+const getOpponentsText = (opponents = []) => (opponents.length ? opponents.join('、') : '无');
 
 const loadData = async () => {
-  if (!requireAuth()) {
-    return;
-  }
-
+  if (!requireAuth()) return;
   try {
     const [history, summary] = await Promise.all([
       api.getHistoryList(),
       api.getStats()
     ]);
-
     historyRecords.value = history;
     stats.value = summary;
   } catch (error) {
@@ -129,29 +204,21 @@ const loadData = async () => {
 };
 
 const clearHistory = () => {
-  uni.showModal({
-    title: '清空历史',
-    content: '只清空当前账号记录，确认继续吗？',
-    success: async ({ confirm }) => {
-      if (!confirm) {
-        return;
-      }
-
-      try {
-        await api.clearHistory();
-        historyRecords.value = [];
-        await loadData();
-        uni.showToast({ title: '已清空', icon: 'success' });
-      } catch (error) {
-        uni.showToast({ title: error.message || '清空失败', icon: 'none' });
-      }
+  showConfirm('确认清空？', '所有历史战绩将被永久删除，不可恢复哦。', async () => {
+    try {
+      await api.clearHistory();
+      historyRecords.value = [];
+      await loadData();
+      uni.showToast({ title: '已清空', icon: 'success' });
+    } catch (error) {
+      uni.showToast({ title: error.message || '清空失败', icon: 'none' });
     }
-  });
+  }, true);
 };
 
-const goToHome = () => {
-  uni.navigateTo({ url: '/pages/index/index' });
-};
+const goToHome = () => reLaunchPage('/pages/index/index');
+
+const goBack = () => navigateBackOrPage('/pages/index/index');
 
 onMounted(loadData);
 </script>
@@ -160,215 +227,212 @@ onMounted(loadData);
 .history-page {
   display: flex;
   flex-direction: column;
+}
+
+.summary-card {
+  background: var(--card-bg-accent);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.stat-box {
+  padding: 24rpx 18rpx;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-xs);
+}
+
+.s-val {
+  font-size: 38rpx;
+  font-weight: 900;
+  color: var(--text-strong);
+}
+.s-val.positive { color: var(--accent-strong); }
+.s-val.negative { color: #109c7a; }
+.s-label {
+  font-size: 22rpx;
+  color: var(--text-sub);
+  margin-top: 8rpx;
+}
+
+.insight-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.insight-item {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 20rpx;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  border: 2rpx solid var(--divider);
+}
+
+.i-label {
+  font-size: 22rpx;
+  color: var(--text-sub);
+}
+
+.i-val {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 6rpx;
+}
+
+.clear-btn {
+  margin-left: auto;
+  width: auto;
+  min-height: 60rpx;
+  padding: 0 24rpx;
+  font-size: 24rpx;
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
   gap: 18rpx;
 }
 
-.overview-card,
-.history-card {
-  padding: 30rpx;
+.record-item {
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: var(--radius-md);
+  padding: 24rpx;
+  border: 2rpx solid var(--divider);
+  transition: transform 0.18s ease;
 }
 
-.overview-head,
-.panel-head,
-.record-head {
+.record-item:active {
+  transform: translateY(2rpx);
+}
+
+.record-item.win {
+  background: linear-gradient(135deg, rgba(255, 140, 171, 0.09), rgba(255, 255, 255, 0.84));
+  border-color: rgba(255, 140, 171, 0.16);
+}
+
+.record-item.lose {
+  background: linear-gradient(135deg, rgba(52, 211, 171, 0.08), rgba(255, 255, 255, 0.84));
+  border-color: rgba(52, 211, 171, 0.16);
+}
+
+.record-item.draw {
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.r-head {
   display: flex;
   justify-content: space-between;
-  gap: 14rpx;
-}
-
-.overview-head,
-.panel-head {
   align-items: flex-start;
+  margin-bottom: 20rpx;
 }
-
-.archive-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 56rpx;
-  padding: 0 18rpx;
-  border-radius: 999rpx;
-  background: var(--surface-4);
-  color: var(--text-secondary);
+.r-title {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: var(--text-strong);
+  display: block;
+}
+.r-time {
   font-size: 22rpx;
-  font-weight: 700;
-  white-space: nowrap;
+  color: var(--text-sub);
+  margin-top: 4rpx;
+  display: block;
 }
-
-.stats-grid,
-.record-grid {
-  display: grid;
-  gap: 12rpx;
-  margin-top: 22rpx;
+.r-result {
+  font-size: 24rpx;
+  font-weight: 800;
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-pill);
 }
+.r-result.win { background: var(--accent-soft); color: var(--accent-strong); }
+.r-result.lose { background: var(--mint-soft); color: #109c7a; }
+.r-result.draw { background: #e9eef9; color: #55647d; }
 
-.stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.r-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
-
-.record-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.compact-danger {
-  min-height: 72rpx;
-  padding: 0 20rpx;
-  border-radius: 20rpx;
-  background: var(--danger-surface);
-  color: var(--danger);
-  border-color: transparent;
-  font-size: 22rpx;
-}
-
-.history-list {
+.r-data {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
-  margin-top: 24rpx;
+  justify-content: center;
+}
+.r-score {
+  font-size: 48rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+.r-score.win { color: var(--accent-strong); }
+.r-score.lose { color: #109c7a; }
+.r-score.draw { color: #475569; }
+.r-rank {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 10rpx;
 }
 
-.record-card {
-  padding: 24rpx;
-  border-radius: 30rpx;
-  background: var(--surface-3);
-  border: 1rpx solid var(--border-soft);
-}
-
-.record-card.win {
-  background: linear-gradient(180deg, rgba(91, 155, 132, 0.08), var(--surface-3));
-}
-
-.record-card.lose {
-  background: linear-gradient(180deg, rgba(140, 82, 82, 0.08), var(--surface-3));
-}
-
-.record-copy {
-  flex: 1;
-}
-
-.record-kicker {
-  color: var(--text-muted);
-  font-size: 20rpx;
-}
-
-.record-title {
-  margin-top: 8rpx;
-  color: var(--text-primary);
-  font-size: 30rpx;
-  font-weight: 700;
-}
-
-.record-meta {
-  margin-top: 8rpx;
-  color: var(--text-secondary);
-  font-size: 22rpx;
-}
-
-.record-summary {
+.r-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--text-sub);
+  gap: 6rpx;
 }
-
-.record-result {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 88rpx;
-  height: 52rpx;
-  padding: 0 18rpx;
-  border-radius: 999rpx;
-  font-size: 24rpx;
-  font-weight: 700;
-}
-
-.record-result.win {
-  background: var(--success-surface);
-  color: var(--success);
-}
-
-.record-result.lose {
-  background: var(--danger-surface);
-  color: var(--danger);
-}
-
-.record-result.draw {
-  background: var(--surface-4);
-  color: var(--text-primary);
-}
-
-.record-score {
-  font-size: 42rpx;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.record-score.win {
-  color: var(--success);
-}
-
-.record-score.lose {
-  color: var(--danger);
-}
-
-.record-score.draw {
-  color: var(--text-primary);
-}
-
-.record-metric {
-  padding: 22rpx;
-}
-
-.record-metric.wide {
-  grid-column: 1 / -1;
-}
-
-.record-opponents {
-  display: block;
-  margin-top: 10rpx;
-  color: var(--text-secondary);
-  font-size: 24rpx;
-  line-height: 1.56;
+.r-opponents {
+  max-width: 300rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  padding: 110rpx 0 86rpx;
+  padding: 70rpx 0 50rpx;
 }
-
-.empty-mark {
-  display: inline-flex;
+.empty-icon {
+  width: 136rpx;
+  height: 136rpx;
+  border-radius: 42rpx;
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
+  color: var(--primary-strong);
+  font-size: 68rpx;
+  margin-bottom: 24rpx;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 128rpx;
-  min-height: 128rpx;
-  padding: 0 24rpx;
-  border-radius: 36rpx;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted);
-  font-size: 28rpx;
-  font-weight: 700;
-  letter-spacing: 4rpx;
 }
-
-.empty-title {
-  margin-top: 24rpx;
-  color: var(--text-primary);
+.empty-text {
   font-size: 32rpx;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--text-strong);
 }
-
-.empty-desc {
-  margin-top: 12rpx;
-  color: var(--text-secondary);
+.empty-sub {
   font-size: 24rpx;
+  color: var(--text-sub);
+  margin-top: 10rpx;
+  text-align: center;
+  line-height: 1.7;
 }
-
-.empty-button {
-  min-width: 260rpx;
-  margin-top: 28rpx;
+.empty-btn {
+  margin-top: 40rpx;
+  width: 300rpx;
 }
 </style>
