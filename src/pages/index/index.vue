@@ -223,6 +223,7 @@ import { computed, onMounted, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { api } from '../../utils/api';
 import { getRoomPageUrl, navigateToPage, redirectToLogin } from '../../utils/auth';
+import { extractRoomId } from '../../utils/room';
 import { resolveAvatarUrl } from '../../utils/avatar';
 
 const userInfo = ref({
@@ -323,15 +324,6 @@ const requireAuth = () => {
   return true;
 };
 
-const extractRoomId = (value) => {
-  if (!value) return '';
-  const normalized = decodeURIComponent(String(value).trim());
-  const match = normalized.match(/roomId=([A-Za-z0-9]+)/i);
-  if (match?.[1]) return match[1].toUpperCase();
-  if (/^https?:/i.test(normalized)) return '';
-  return normalized.replace(/\s+/g, '').toUpperCase();
-};
-
 const loadDashboard = async () => {
   // 优先从本地缓存读取，防止白屏等待
   const cachedUser = uni.getStorageSync('userInfo');
@@ -429,8 +421,9 @@ const pasteLink = () => {
   if (!requireAuth()) return;
   uni.getClipboardData({
     success: ({ data }) => {
-      joinInput.value = data || '';
-      joinByRoomId(data || '', 'paste');
+      const clipboardText = data || '';
+      joinInput.value = extractRoomId(clipboardText) || clipboardText;
+      joinByRoomId(clipboardText, 'paste');
     },
     fail: () => {
       uni.showToast({ title: '读取剪贴板失败啦', icon: 'none' });

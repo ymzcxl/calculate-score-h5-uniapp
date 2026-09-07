@@ -237,7 +237,6 @@
               <text class="highlight">{{ selectedTargetName || '请选择目标玩家' }}</text>
             </text>
           </view>
-          <view class="score-head-badge">支持小数</view>
         </view>
 
         <view class="score-section-card target-picker">
@@ -281,10 +280,16 @@
         <view class="score-section-card score-custom-block">
           <view class="score-section-head">
             <text class="score-section-title">自定义分值</text>
-            <text class="score-section-tip">支持 0.5 / 1.5</text>
+            <text class="score-section-tip">只支持整数，如 1 / 2 / 10</text>
           </view>
           <view class="custom-row score-custom-row">
-            <input v-model="customScore" class="macaron-input score-custom-input" type="digit" placeholder="输入自定义分值" />
+            <input
+              v-model="customScore"
+              class="macaron-input score-custom-input"
+              type="number"
+              placeholder="输入整数分值"
+              @input="handleCustomScoreInput"
+            />
           </view>
         </view>
 
@@ -1127,14 +1132,19 @@ const updateScore = async (score) => {
   }
 };
 
+const handleCustomScoreInput = (event) => {
+  const value = String(event?.detail?.value ?? customScore.value ?? '');
+  customScore.value = value.replace(/\D/g, '');
+};
+
 const submitCustomScore = () => {
-  const score = Number(customScore.value);
-  if (!score || score <= 0) {
-    uni.showToast({ title: '请输入大于 0 的分值，支持小数', icon: 'none' });
+  const normalizedScore = String(customScore.value || '').trim();
+  if (!/^[1-9]\d*$/.test(normalizedScore)) {
+    uni.showToast({ title: '请输入大于 0 的整数分值', icon: 'none' });
     return;
   }
   customScore.value = '';
-  updateScore(score);
+  updateScore(Number(normalizedScore));
 };
 
 const handleRevokeLastScore = async () => {
@@ -1933,8 +1943,8 @@ onUnmounted(() => {
   position: relative;
   width: 152rpx;
   min-width: 152rpx;
-  height: 172rpx;
-  padding: 14rpx 12rpx;
+  min-height: 182rpx;
+  padding: 14rpx 12rpx 18rpx;
   border-radius: 30rpx;
   background: linear-gradient(180deg, #ffffff, #eef4ff);
   border: 2rpx solid rgba(209, 223, 248, 0.72);
@@ -2024,6 +2034,7 @@ onUnmounted(() => {
 .player-square-score,
 .leaderboard-score {
   min-height: 42rpx;
+  margin-top: auto;
   padding: 0 18rpx;
   border-radius: 999rpx;
   display: inline-flex;
@@ -2673,14 +2684,14 @@ onUnmounted(() => {
 .floating-edge-stack {
   position: fixed;
   right: 24rpx;
-  bottom: calc(304rpx + env(safe-area-inset-bottom));
+  bottom: calc(198rpx + env(safe-area-inset-bottom));
   z-index: 50;
 }
 
 .floating-edge-launchers {
   position: fixed;
   right: 24rpx;
-  bottom: calc(272rpx + env(safe-area-inset-bottom));
+  bottom: calc(106rpx + env(safe-area-inset-bottom));
   z-index: 51;
 }
 
@@ -2963,21 +2974,6 @@ onUnmounted(() => {
 .score-modal-desc {
   margin-bottom: 0;
   line-height: 1.5;
-}
-
-.score-head-badge {
-  min-width: 112rpx;
-  height: 54rpx;
-  padding: 0 18rpx;
-  border-radius: 999rpx;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #2563eb, #60a5fa);
-  color: #fff;
-  font-size: 22rpx;
-  font-weight: 800;
-  flex-shrink: 0;
 }
 
 .confirm-desc {
@@ -3500,7 +3496,7 @@ onUnmounted(() => {
   .player-square {
     width: 144rpx;
     min-width: 144rpx;
-    height: 166rpx;
+    min-height: 176rpx;
   }
 
   .feed-bubble {
@@ -3509,7 +3505,7 @@ onUnmounted(() => {
 
   .floating-edge-stack {
     right: 16rpx;
-    bottom: calc(300rpx + env(safe-area-inset-bottom));
+    bottom: calc(194rpx + env(safe-area-inset-bottom));
   }
 
   .floating-edge-panel {
@@ -3518,7 +3514,7 @@ onUnmounted(() => {
 
   .floating-edge-launchers {
     right: 16rpx;
-    bottom: calc(266rpx + env(safe-area-inset-bottom));
+    bottom: calc(104rpx + env(safe-area-inset-bottom));
   }
 
   .top-entry-row {
