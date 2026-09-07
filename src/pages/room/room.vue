@@ -141,47 +141,48 @@
         </scroll-view>
       </view>
 
-      <view class="broadcast-stage">
-        <view
-          v-for="broadcast in roomBroadcasts"
-          :key="broadcast.id"
-          class="broadcast-banner"
-          :class="broadcast.type"
-        >
-          <view v-if="isFuryBroadcast(broadcast)" class="broadcast-flare-row">
-            <text class="broadcast-flare">😤</text>
-            <text class="broadcast-flare">🔥</text>
-            <text class="broadcast-flare">😡</text>
-          </view>
-          <text class="broadcast-label">{{ broadcast.label }}</text>
-          <text class="broadcast-content">{{ broadcast.content }}</text>
-        </view>
-      </view>
+    </view>
 
-      <view class="interaction-stage">
-        <view
-          v-for="effect in interactionEffects"
-          :key="effect.id"
-          class="interaction-effect"
-          :class="{ bomb: effect.kind === '炸弹', combo: effect.count > 1 }"
-          :style="{ left: effect.left, top: effect.top }"
-        >
-          <view class="effect-pulse"></view>
-          <view class="effect-main">
-            <text class="effect-emoji">{{ effect.emoji }}</text>
-            <text v-if="effect.count > 1" class="effect-count">x{{ effect.count }}</text>
-          </view>
-          <view v-if="effect.count > 1" class="effect-echo-row">
-            <text
-              v-for="index in getInteractionEchoCount(effect.count)"
-              :key="`${effect.id}-${index}`"
-              class="effect-echo"
-            >
-              {{ effect.emoji }}
-            </text>
-          </view>
-          <text class="effect-caption">{{ getInteractionCaptionText(effect) }}</text>
+    <view class="broadcast-stage">
+      <view
+        v-for="broadcast in roomBroadcasts"
+        :key="broadcast.id"
+        class="broadcast-banner"
+        :class="broadcast.type"
+      >
+        <view v-if="isFuryBroadcast(broadcast)" class="broadcast-flare-row">
+          <text class="broadcast-flare">😤</text>
+          <text class="broadcast-flare">🔥</text>
+          <text class="broadcast-flare">😡</text>
         </view>
+        <text class="broadcast-label">{{ broadcast.label }}</text>
+        <text class="broadcast-content">{{ broadcast.content }}</text>
+      </view>
+    </view>
+
+    <view class="interaction-stage">
+      <view
+        v-for="effect in interactionEffects"
+        :key="effect.id"
+        class="interaction-effect"
+        :class="{ bomb: effect.kind === '炸弹', combo: effect.count > 1 }"
+        :style="{ left: effect.left, top: effect.top }"
+      >
+        <view class="effect-pulse"></view>
+        <view class="effect-main">
+          <text class="effect-emoji">{{ effect.emoji }}</text>
+          <text v-if="effect.count > 1" class="effect-count">x{{ effect.count }}</text>
+        </view>
+        <view v-if="effect.count > 1" class="effect-echo-row">
+          <text
+            v-for="index in getInteractionEchoCount(effect.count)"
+            :key="`${effect.id}-${index}`"
+            class="effect-echo"
+          >
+            {{ effect.emoji }}
+          </text>
+        </view>
+        <text class="effect-caption">{{ getInteractionCaptionText(effect) }}</text>
       </view>
     </view>
 
@@ -1896,10 +1897,10 @@ onUnmounted(() => {
 }
 
 .player-square {
-  width: 156rpx;
-  min-width: 156rpx;
-  height: 174rpx;
-  padding: 12rpx 12rpx 14rpx;
+  width: 164rpx;
+  min-width: 164rpx;
+  height: 198rpx;
+  padding: 14rpx 12rpx 16rpx;
   border-radius: 30rpx;
   background: linear-gradient(180deg, #ffffff, #eef4ff);
   border: 2rpx solid rgba(209, 223, 248, 0.72);
@@ -1907,9 +1908,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10rpx;
+  justify-content: flex-start;
+  gap: 8rpx;
   text-align: center;
+  overflow: hidden;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1963,9 +1965,9 @@ onUnmounted(() => {
 
 .player-square-avatar,
 .leaderboard-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 28rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 24rpx;
   background: #e2e8f0;
   box-shadow: 0 10rpx 18rpx rgba(148, 163, 184, 0.18);
   flex-shrink: 0;
@@ -1973,10 +1975,10 @@ onUnmounted(() => {
 
 .player-square-name {
   width: 100%;
-  font-size: 23rpx;
+  font-size: 22rpx;
   font-weight: 800;
-  line-height: 1.4;
-  min-height: 58rpx;
+  line-height: 1.35;
+  min-height: 48rpx;
   color: var(--text-main);
   display: -webkit-box;
   overflow: hidden;
@@ -1987,14 +1989,31 @@ onUnmounted(() => {
 
 .player-square-score,
 .leaderboard-score {
-  font-size: 25rpx;
+  margin-top: auto;
+  min-height: 40rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23rpx;
   font-weight: 900;
   color: var(--text-main);
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(226, 232, 240, 0.78);
 }
 
 .player-square.active .player-square-name,
 .player-square.active .player-square-score {
   color: #fff;
+}
+
+.player-square.active .player-square-score {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .player-square-score.neutral {
@@ -2200,16 +2219,16 @@ onUnmounted(() => {
 }
 
 .interaction-stage {
-  position: absolute;
-  inset: 112rpx 24rpx 36rpx 24rpx;
+  position: fixed;
+  inset: calc(env(safe-area-inset-top) + 110rpx) 24rpx calc(220rpx + env(safe-area-inset-bottom)) 24rpx;
   pointer-events: none;
   overflow: hidden;
-  z-index: 14;
+  z-index: 62;
 }
 
 .broadcast-stage {
-  position: absolute;
-  top: 24%;
+  position: fixed;
+  top: 28%;
   left: 24rpx;
   right: 24rpx;
   display: flex;
@@ -2217,7 +2236,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 14rpx;
   pointer-events: none;
-  z-index: 13;
+  z-index: 63;
 }
 
 .broadcast-banner {
@@ -2545,14 +2564,14 @@ onUnmounted(() => {
 .floating-edge-stack {
   position: fixed;
   right: 24rpx;
-  bottom: calc(250rpx + env(safe-area-inset-bottom));
+  bottom: calc(320rpx + env(safe-area-inset-bottom));
   z-index: 50;
 }
 
 .floating-edge-launchers {
   position: fixed;
   right: 24rpx;
-  bottom: calc(124rpx + env(safe-area-inset-bottom));
+  bottom: calc(198rpx + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 12rpx;
@@ -3004,7 +3023,7 @@ onUnmounted(() => {
 }
 
 .compact-score-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .shortcut-chip {
@@ -3012,7 +3031,7 @@ onUnmounted(() => {
   border-radius: 26rpx;
   background: linear-gradient(180deg, #f5f8ff, #eef4ff);
   color: var(--secondary-strong);
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 900;
 }
 
@@ -3036,8 +3055,12 @@ onUnmounted(() => {
 
 .score-modal-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 14rpx;
+}
+
+.score-modal-actions .macaron-btn {
+  flex: 1;
 }
 
 .custom-btn {
@@ -3311,14 +3334,19 @@ onUnmounted(() => {
     width: 100%;
   }
 
-  .info-grid,
-  .shortcut-grid {
+  .info-grid {
     grid-template-columns: 1fr;
   }
 
+  .shortcut-grid,
+  .compact-score-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .player-square {
-    width: 144rpx;
-    min-width: 144rpx;
+    width: 150rpx;
+    min-width: 150rpx;
+    height: 190rpx;
   }
 
   .feed-bubble {
@@ -3327,7 +3355,7 @@ onUnmounted(() => {
 
   .floating-edge-stack {
     right: 16rpx;
-    bottom: calc(228rpx + env(safe-area-inset-bottom));
+    bottom: calc(286rpx + env(safe-area-inset-bottom));
   }
 
   .floating-edge-panel {
@@ -3336,7 +3364,7 @@ onUnmounted(() => {
 
   .floating-edge-launchers {
     right: 16rpx;
-    bottom: calc(120rpx + env(safe-area-inset-bottom));
+    bottom: calc(188rpx + env(safe-area-inset-bottom));
   }
 
   .top-entry-row {
@@ -3354,6 +3382,16 @@ onUnmounted(() => {
 
   .entry-desc {
     font-size: 17rpx;
+  }
+
+  .score-modal-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .score-modal-actions .macaron-btn {
+    flex: 1;
+    width: auto;
   }
 
   .chat-send-btn {
