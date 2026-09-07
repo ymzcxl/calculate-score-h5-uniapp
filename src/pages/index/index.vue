@@ -10,20 +10,15 @@
               <text class="macaron-badge yellow" v-if="userInfo.phone">{{ userInfo.phone }}</text>
               <text class="macaron-badge blue" v-else>未绑定手机</text>
             </view>
-            <text class="hero-caption">熟人局记分 · 小程序风操作体验</text>
           </view>
         </view>
         <button class="setting-btn" @click="settingsPopup = true">设置</button>
       </view>
       
       <view class="hero-body">
-        <view class="hero-copy-block">
-          <text class="greeting-title">{{ greetingTitle }}</text>
-          <text class="greeting-sub">{{ dashboardSubtitle }}</text>
-        </view>
         <view class="hero-mini-stats">
           <view class="mini-stat">
-            <text class="mini-k">总场次</text>
+            <text class="mini-k">场次</text>
             <text class="mini-v">{{ stats.totalGames }}</text>
           </view>
           <view class="mini-stat">
@@ -32,13 +27,16 @@
               {{ stats.totalScore > 0 ? '+' : '' }}{{ stats.totalScore }}
             </text>
           </view>
+          <view class="mini-stat">
+            <text class="mini-k">胜率</text>
+            <text class="mini-v">{{ stats.winRate }}%</text>
+          </view>
         </view>
       </view>
     </view>
 
     <view class="section-head">
       <text class="section-title">快速开局</text>
-      <text class="section-desc">创建房间或直接输入房间号进桌</text>
     </view>
 
     <view class="action-grid">
@@ -291,20 +289,6 @@ const defaultStats = () => ({
   totalScore: 0,
   averageScore: 0,
   bestScore: 0
-});
-
-const greetingTitle = computed(() => {
-  const hour = new Date().getHours();
-  if (hour < 12) return '早上好呀，今天手气如何？☀️';
-  if (hour < 18) return '下午好，来一局提提神！🍵';
-  return '晚上好，开桌快乐一下！🌙';
-});
-
-const dashboardSubtitle = computed(() => {
-  if (!stats.value.totalGames) {
-    return '还没有记录呢，快拉上朋友开一局吧~';
-  }
-  return `已经玩了 ${stats.value.totalGames} 局，继续保持节奏！`;
 });
 
 const displayAvatar = computed(() => resolveAvatarUrl(userInfo.value));
@@ -575,13 +559,6 @@ onShow(loadDashboard);
   color: var(--text-strong);
 }
 
-.hero-caption {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 24rpx;
-  color: var(--text-sub);
-}
-
 .setting-btn {
   min-width: 120rpx;
   min-height: 68rpx;
@@ -595,45 +572,18 @@ onShow(loadDashboard);
 }
 
 .hero-body {
-  display: flex;
-  align-items: stretch;
-  gap: 18rpx;
-  margin-top: 24rpx;
-}
-
-.hero-copy-block {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.greeting-title {
-  display: block;
-  font-size: 34rpx;
-  font-weight: 900;
-  color: var(--text-strong);
-  line-height: 1.35;
-}
-
-.greeting-sub {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 26rpx;
-  color: var(--text-sub);
-  line-height: 1.6;
+  margin-top: 18rpx;
 }
 
 .hero-mini-stats {
-  width: 220rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
 }
 
 .mini-stat {
-  flex: 1;
-  padding: 18rpx 20rpx;
+  min-width: 0;
+  padding: 16rpx 18rpx;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.72);
   border: 2rpx solid rgba(255, 255, 255, 0.7);
@@ -647,10 +597,14 @@ onShow(loadDashboard);
 
 .mini-v {
   display: block;
-  margin-top: 10rpx;
-  font-size: 34rpx;
+  margin-top: 8rpx;
+  font-size: 30rpx;
   font-weight: 900;
   color: var(--text-strong);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mini-v.positive {
@@ -661,11 +615,15 @@ onShow(loadDashboard);
   color: #109c7a;
 }
 
+.section-head {
+  margin: 18rpx 0 16rpx;
+}
+
 .action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24rpx;
-  margin-bottom: 28rpx;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .action-card {
@@ -673,8 +631,8 @@ onShow(loadDashboard);
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12rpx;
-  padding: 30rpx 26rpx;
+  gap: 10rpx;
+  padding: 24rpx 22rpx;
   border-radius: var(--radius-lg);
   transition: transform 0.18s ease;
 }
@@ -692,36 +650,36 @@ onShow(loadDashboard);
 }
 
 .action-icon {
-  width: 92rpx;
-  height: 92rpx;
-  border-radius: 30rpx;
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 26rpx;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow-xs);
-  font-size: 48rpx;
+  font-size: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .action-title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 900;
   color: var(--text-strong);
 }
 
 .action-desc {
-  font-size: 24rpx;
+  font-size: 23rpx;
   color: var(--text-sub);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .action-chip {
   margin-top: auto;
-  padding: 10rpx 18rpx;
+  padding: 8rpx 16rpx;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.72);
   color: var(--primary-strong);
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 800;
 }
 

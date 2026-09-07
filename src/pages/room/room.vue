@@ -14,6 +14,16 @@
 
     <view class="room-top-shell">
       <view class="top-overview-panel macaron-card">
+        <view class="top-panel-head">
+          <view class="top-panel-copy">
+            <text class="top-panel-kicker">房间概览</text>
+            <text class="top-panel-title">{{ roomInfo.title || '实时牌局' }}</text>
+          </view>
+          <view v-if="isRoomCreator && roomInfo.status === 'active'" class="creator-close-pill" @click="closeRoomDirectly">
+            关闭房间
+          </view>
+        </view>
+
         <view class="room-mini-bar">
           <view class="room-mini-main">
             <view class="room-id-line">
@@ -30,27 +40,27 @@
           <view class="room-mini-side">
             <text class="leader-mini-label">领先</text>
             <text class="leader-mini-name">{{ leaderPlayer ? leaderPlayer.name : '暂无' }}</text>
+            <text class="leader-mini-score" :class="{ positive: (leaderPlayer?.score || 0) > 0, negative: (leaderPlayer?.score || 0) < 0 }">
+              {{ leaderPlayer ? formatScore(leaderPlayer.score || 0) : '0' }}
+            </text>
           </view>
         </view>
 
         <view class="top-entry-row">
           <view class="entry-btn accent" @click="openRoomInfoPopup">
+            <text class="entry-kicker">牌桌</text>
             <text class="entry-name">房间信息</text>
             <text class="entry-desc">房号 邀请 状态</text>
           </view>
           <view class="entry-btn secondary" @click="openLeaderboardPopup">
+            <text class="entry-kicker">榜单</text>
             <text class="entry-name">排行榜</text>
             <text class="entry-desc">积分 名次 提醒</text>
           </view>
           <view class="entry-btn neutral" @click="openMoreActionsPopup">
+            <text class="entry-kicker">操作</text>
             <text class="entry-name">更多功能</text>
             <text class="entry-desc">{{ isRoomCreator ? '撤回 结算 关房' : '撤回 刷新 退出' }}</text>
-          </view>
-        </view>
-
-        <view v-if="isRoomCreator && roomInfo.status === 'active'" class="creator-action-row">
-          <view class="creator-close-pill" @click="closeRoomDirectly">
-            房主关闭房间
           </view>
         </view>
       </view>
@@ -58,7 +68,6 @@
       <view class="player-strip-card macaron-card">
         <view class="section-head compact">
           <text class="section-title">玩家区</text>
-          <text class="section-subtitle">{{ currentAudienceShortText }}</text>
         </view>
 
         <scroll-view class="player-strip-scroll" scroll-x enable-flex show-scrollbar="false">
@@ -69,7 +78,9 @@
               class="player-square"
               :class="{
                 active: selectedTargetId === player.userId,
-                self: player.userId === currentUserId
+                self: player.userId === currentUserId,
+                'leader-reminder': isLeaderReminderActive(player.userId),
+                'leader-reminder-strong': isLeaderReminderStrong(player.userId)
               }"
               @click="selectTarget(player.userId)"
             >
@@ -90,29 +101,11 @@
             </view>
           </view>
         </scroll-view>
-
-        <view class="target-hint-bar" :class="{ active: !!selectedTargetId }">
-          <view class="target-hint-copy">
-            <text class="target-hint-label">当前发送目标</text>
-            <text class="target-hint-name">{{ selectedTargetName || '默认发给全桌' }}</text>
-          </view>
-          <view v-if="selectedTargetId" class="target-hint-clear" @click="clearSelectedTarget">
-            再点一次取消
-          </view>
-        </view>
       </view>
     </view>
 
     <view class="feed-section">
       <view class="macaron-card feed-card">
-        <view class="feed-head">
-          <view>
-            <view class="card-title">房间流水</view>
-            <view class="feed-subtitle">消息和计分都在这里，最新一条永远看得见</view>
-          </view>
-          <view class="feed-counter">{{ flowItems.length }} 条</view>
-        </view>
-
         <scroll-view
           class="feed-scroll"
           scroll-y
@@ -125,15 +118,27 @@
               :id="item.scrollId"
               :key="item.scrollId"
               class="feed-item"
-              :class="[item.kind, { revoked: item.kind === 'score' && item.data.isRevoked }]"
+              :class="[
+                getFlowItemSide(item),
+                item.kind,
+                {
+                  system: isSystemFlowItem(item),
+                  revoked: item.kind === 'score' && item.data.isRevoked
+                }
+              ]"
             >
-              <view class="feed-bubble">
+              <view class="feed-bubble-wrap">
                 <view class="feed-item-head">
-                  <text class="feed-item-type">{{ item.kind === 'message' ? '消息' : '记分' }}</text>
+                  <view class="feed-item-head-main">
+                    <text class="feed-item-name">{{ getFlowSenderName(item) }}</text>
+                    <text class="feed-item-type">{{ getFlowTypeLabel(item) }}</text>
+                  </view>
                   <text class="feed-item-time">{{ formatTime(item.timestamp) }}</text>
                 </view>
-                <text class="feed-item-main">{{ getFlowPrimaryText(item) }}</text>
-                <text v-if="getFlowSecondaryText(item)" class="feed-item-sub">{{ getFlowSecondaryText(item) }}</text>
+                <view class="feed-bubble">
+                  <text class="feed-item-main">{{ getFlowPrimaryText(item) }}</text>
+                  <text v-if="getFlowSecondaryText(item)" class="feed-item-sub">{{ getFlowSecondaryText(item) }}</text>
+                </view>
               </view>
             </view>
           </view>
@@ -201,9 +206,7 @@
       <view class="floating-edge-panel">
         <view class="floating-panel-head">
           <text class="floating-title">{{ floatingPanelMode === 'interaction' ? '快捷互动' : '快捷话术' }}</text>
-          <text class="floating-subtitle">
-            {{ floatingPanelMode === 'interaction' ? `${currentAudienceHint}，长按支持 10 连发` : currentAudienceHint }}
-          </text>
+          <text class="floating-subtitle">{{ floatingPanelSubtitle }}</text>
         </view>
         <view v-if="floatingPanelMode === 'interaction'" class="interaction-list floating-list">
           <view
@@ -227,10 +230,6 @@
 
     <view class="bottom-wrapper">
       <view class="bottom-dock">
-        <view class="chat-range-bar">
-          <text class="chat-range-label">当前发送范围</text>
-          <text class="chat-range-value">{{ currentAudienceHint }}</text>
-        </view>
         <view class="chat-row compact-chat-row">
           <input
             v-model.trim="message"
@@ -548,11 +547,17 @@ const settlementData = ref(null);
 const floatingPanelVisible = ref(false);
 const floatingPanelMode = ref('interaction');
 const feedScrollAnchor = ref('');
+const leaderReminderState = ref({
+  leaderIds: [],
+  emphasis: '',
+  motion: ''
+});
 const seenInteractionIds = new Set();
 const ignoredSocketEventKeys = new Set();
 const interactionEffectTimers = new Map();
 const roomBroadcastTimers = new Map();
 let topToastTimer = null;
+let leaderReminderTimer = null;
 
 const confirmPopup = ref({
   visible: false,
@@ -602,19 +607,18 @@ const scoreLogCount = computed(() => scoreHistory.value.filter(item => !item.isR
 const messageCount = computed(() => messages.value.length);
 const playerCount = computed(() => players.value.length);
 const latestRevocableScore = computed(() => scoreHistory.value.find(item => !item.isRevoked) || null);
-const currentAudienceShortText = computed(() => {
-  if (roomInfo.value.status !== 'active') {
-    return '牌局已结束';
-  }
-  return selectedTargetName.value ? `已选中 ${selectedTargetName.value}` : '横向滑动选择玩家';
-});
-const currentAudienceHint = computed(() => {
+const interactionAudienceHint = computed(() => {
   if (roomInfo.value.status !== 'active') {
     return '牌局已结束，只看记录';
   }
-  return selectedTargetName.value ? `只发给 ${selectedTargetName.value}` : '默认发给全桌';
+  return selectedTargetName.value ? `已选中 ${selectedTargetName.value}，长按支持 10 连发` : '未选中玩家时默认发给全桌，长按支持 10 连发';
 });
-const messagePlaceholder = computed(() => (selectedTargetName.value ? `对 ${selectedTargetName.value} 说点什么` : '给全桌说点什么'));
+const floatingPanelSubtitle = computed(() => (
+  floatingPanelMode.value === 'interaction'
+    ? interactionAudienceHint.value
+    : '快捷话术发出后全房可见'
+));
+const messagePlaceholder = computed(() => '给全桌说点什么');
 const leaderReminderText = computed(() => {
   if (!leaderPlayer.value) {
     return '会在屏幕中间放一条更醒目的提醒，把大家注意力拉回来。';
@@ -787,26 +791,51 @@ const getScoreDetailText = (item) => {
   return `记分后比分：${formatScore(item.fromUserScoreAfter)} / ${formatScore(item.toUserScoreAfter)}`;
 };
 
-const getMessageAudienceText = (item) => {
-  const speaker = item?.userName || getPlayerName(item?.userId, '玩家');
-  if (!item?.targetUserId) {
-    return `${speaker} 发给全桌`;
+const isSystemFlowItem = (item) => item.kind === 'message' && (item.data.type === 'system' || !item.data.userId);
+
+const getFlowItemSide = (item) => {
+  if (isSystemFlowItem(item)) {
+    return 'other';
   }
-  return `${speaker} 只发给 ${getPlayerName(item.targetUserId, '目标玩家')}`;
+  if (item.kind === 'score') {
+    return item.data.fromUserId === currentUserId.value ? 'mine' : 'other';
+  }
+  return item.data.userId === currentUserId.value ? 'mine' : 'other';
+};
+
+const getFlowSenderName = (item) => {
+  if (isSystemFlowItem(item)) {
+    return '系统';
+  }
+  if (item.kind === 'score') {
+    return item.data.fromUserId === currentUserId.value
+      ? '我'
+      : getPlayerName(item.data.fromUserId, '玩家');
+  }
+  return item.data.userId === currentUserId.value
+    ? '我'
+    : (item.data.userName || getPlayerName(item.data.userId, '玩家'));
+};
+
+const getFlowTypeLabel = (item) => {
+  if (isSystemFlowItem(item)) {
+    return '提醒';
+  }
+  return item.kind === 'score' ? '记分' : '消息';
 };
 
 const getFlowPrimaryText = (item) => {
   if (item.kind === 'score') {
     return getScoreText(item.data);
   }
-  return `${getMessageAudienceText(item.data)}：${item.data.content}`;
+  return item.data.content;
 };
 
 const getFlowSecondaryText = (item) => {
   if (item.kind === 'score') {
     return getScoreDetailText(item.data);
   }
-  return item.data.targetUserId ? '私下提醒' : '全桌可见';
+  return isSystemFlowItem(item) ? '全房提醒' : '';
 };
 
 const appendSystemMessage = (content) => {
@@ -846,6 +875,66 @@ const showTopToast = (msg) => {
   topToastTimer = setTimeout(() => {
     topToastMessage.value = '';
   }, 2500);
+};
+
+const clearLeaderReminderState = () => {
+  leaderReminderState.value = {
+    leaderIds: [],
+    emphasis: '',
+    motion: ''
+  };
+};
+
+const activateLeaderReminder = (payload = {}) => {
+  const leaderIds = Array.isArray(payload.leaders)
+    ? payload.leaders.map(item => item.userId).filter(Boolean)
+    : [];
+
+  if (!leaderIds.length) {
+    clearLeaderReminderState();
+    return;
+  }
+
+  const effectMeta = payload.effectMeta || {};
+  leaderReminderState.value = {
+    leaderIds,
+    emphasis: effectMeta.emphasis || 'medium',
+    motion: effectMeta.motion || 'flash'
+  };
+
+  if (leaderReminderTimer) {
+    clearTimeout(leaderReminderTimer);
+  }
+  leaderReminderTimer = setTimeout(() => {
+    clearLeaderReminderState();
+    leaderReminderTimer = null;
+  }, Math.max(effectMeta.durationMs || 2200, 1800) + 400);
+};
+
+const isLeaderReminderActive = (userId) => (
+  !!userId && leaderReminderState.value.leaderIds.includes(userId)
+);
+
+const isLeaderReminderStrong = (userId) => (
+  isLeaderReminderActive(userId) && leaderReminderState.value.emphasis === 'strong'
+);
+
+const buildLeaderboardBroadcastType = (payload = {}) => {
+  const effectMeta = payload.effectMeta || {};
+  return ['leaderboard', 'fury', effectMeta.motion, effectMeta.emphasis].filter(Boolean).join(' ');
+};
+
+const triggerLeaderReminderFeedback = (payload = {}) => {
+  activateLeaderReminder(payload);
+  if (!payload.content) {
+    return;
+  }
+  showRoomBroadcast({
+    id: `leaderboard-${payload.messageId || Date.now()}`,
+    type: buildLeaderboardBroadcastType(payload),
+    label: '全桌围攻提醒',
+    content: payload.content
+  });
 };
 
 const showRoomBroadcast = ({ id, type = 'leaderboard', label = '全桌广播', content = '' }) => {
@@ -964,8 +1053,9 @@ const syncRoom = async () => {
     userId: item.userId,
     userName: item.userName,
     content: item.content,
-    targetUserId: item.targetUserId || '',
-    targetScope: item.targetScope || (item.targetUserId ? 'player' : 'room'),
+    targetUserId: '',
+    targetScope: 'room',
+    type: item.type || 'user',
     timestamp: item.timestamp
   }));
 
@@ -1263,8 +1353,7 @@ const sendMessage = async (contentOverride = '', options = {}) => {
   if (!content) return false;
 
   try {
-    const targetUserId = options.forceRoom ? '' : (selectedTargetId.value || '');
-    await api.sendMessage({ roomId: roomId.value, content, type: 'user', targetUserId });
+    await api.sendMessage({ roomId: roomId.value, content, type: 'user' });
     if (!contentOverride) {
       message.value = '';
     }
@@ -1272,11 +1361,10 @@ const sendMessage = async (contentOverride = '', options = {}) => {
       floatingPanelVisible.value = false;
     }
     await syncRoom();
-    showChatBubble(currentUserId.value, content, targetUserId);
+    showChatBubble(currentUserId.value, content);
     socket.value?.emit('new-message', {
       roomId: roomId.value,
       userId: currentUserId.value,
-      targetUserId,
       content,
       timestamp: new Date().toISOString()
     });
@@ -1306,12 +1394,7 @@ const sendLeaderReminder = async () => {
     markIgnoredSocketEvent(getLeaderboardNoticeKey(result));
     await syncRoom();
     leaderboardPopup.value = false;
-    showRoomBroadcast({
-      id: `leaderboard-${result.messageId || Date.now()}`,
-      type: 'leaderboard fury',
-      label: '全桌围攻提醒',
-      content: result.content
-    });
+    triggerLeaderReminderFeedback(result);
   } catch (error) {
     uni.showToast({ title: error.message || '发送失败', icon: 'none' });
   }
@@ -1329,11 +1412,10 @@ const buildRevokeSocketMessage = (payload) => {
   return `${approver} 已确认撤回上一笔记分`;
 };
 
-const showChatBubble = (userId, content, targetUserId = '') => {
+const showChatBubble = (userId, content) => {
   const player = players.value.find(item => item.userId === userId);
   const name = player ? player.name : '系统';
-  const audienceText = targetUserId ? ` 发给 ${getPlayerName(targetUserId, '目标玩家')}` : ' 发给全桌';
-  showTopToast(`${name}${audienceText}：${content}`);
+  showTopToast(`${name}：${content}`);
 };
 
 const isFuryBroadcast = (broadcast) => String(broadcast?.type || '').includes('fury');
@@ -1513,8 +1595,7 @@ const initSocket = () => {
     }
     if (data?.userId && data?.content && data.userId !== currentUserId.value) {
       const senderName = getPlayerName(data.userId, '玩家');
-      const audienceText = data.targetUserId ? ` 发给 ${getPlayerName(data.targetUserId, '目标玩家')}` : ' 发给全桌';
-      showTopToast(`${senderName}${audienceText}：${data.content}`);
+      showTopToast(`${senderName}：${data.content}`);
     }
     await syncRoomQuietly();
   });
@@ -1523,14 +1604,7 @@ const initSocket = () => {
     if (shouldIgnoreSocketEvent(getLeaderboardNoticeKey(data))) {
       return;
     }
-    if (data?.content) {
-      showRoomBroadcast({
-        id: `leaderboard-${data.messageId || Date.now()}`,
-        type: 'leaderboard fury',
-        label: '全桌围攻提醒',
-        content: data.content
-      });
-    }
+    triggerLeaderReminderFeedback(data);
     await syncRoomQuietly();
   });
 
@@ -1601,6 +1675,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (topToastTimer) clearTimeout(topToastTimer);
+  if (leaderReminderTimer) clearTimeout(leaderReminderTimer);
   interactionEffectTimers.forEach(timer => clearTimeout(timer));
   roomBroadcastTimers.forEach(timer => clearTimeout(timer));
   if (socket.value) {
@@ -1701,24 +1776,56 @@ onUnmounted(() => {
 }
 
 .room-top-shell {
-  padding: 0 24rpx 10rpx;
+  padding: 0 24rpx 12rpx;
 }
 
 .top-overview-panel {
-  padding: 14rpx;
-  border-radius: 34rpx;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(245, 248, 255, 0.92));
-  box-shadow: 0 18rpx 34rpx rgba(148, 163, 184, 0.14);
+  padding: 16rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.94));
+  border: 2rpx solid rgba(223, 231, 246, 0.9);
+  box-shadow: 0 24rpx 40rpx rgba(148, 163, 184, 0.14);
+}
+
+.top-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-bottom: 14rpx;
+}
+
+.top-panel-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.top-panel-kicker {
+  font-size: 20rpx;
+  font-weight: 800;
+  letter-spacing: 4rpx;
+  color: var(--text-light);
+}
+
+.top-panel-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room-mini-bar {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 12rpx 14rpx;
-  border-radius: 26rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 246, 255, 0.82));
-  border: 2rpx solid rgba(216, 226, 244, 0.76);
+  align-items: stretch;
+  gap: 14rpx;
+  padding: 14rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 245, 255, 0.88));
+  border: 2rpx solid rgba(216, 226, 244, 0.9);
 }
 
 .room-mini-main {
@@ -1748,29 +1855,38 @@ onUnmounted(() => {
 .room-mini-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6rpx;
+  gap: 8rpx;
 }
 
 .meta-chip {
-  padding: 6rpx 14rpx;
+  min-height: 44rpx;
+  padding: 0 16rpx;
   border-radius: 999rpx;
-  background: #f4f7ff;
-  color: var(--text-sub);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f4f7ff, #edf3ff);
+  color: #5b6780;
   font-size: 20rpx;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .meta-chip.accent {
-  background: #fff0f6;
+  background: linear-gradient(180deg, #fff0f6, #ffe4ef);
   color: var(--primary-strong);
 }
 
 .room-mini-side {
-  min-width: 116rpx;
-  padding: 10rpx 12rpx;
-  border-radius: 22rpx;
-  background: linear-gradient(180deg, #fff7fb, #fff1f8);
-  text-align: right;
+  min-width: 156rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 26rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8rpx;
+  background: linear-gradient(180deg, #fff7fb, #fff0f7);
+  border: 2rpx solid rgba(255, 223, 236, 0.95);
+  text-align: left;
   flex-shrink: 0;
 }
 
@@ -1782,26 +1898,51 @@ onUnmounted(() => {
 
 .leader-mini-name {
   display: block;
-  margin-top: 6rpx;
-  font-size: 24rpx;
+  font-size: 26rpx;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.25;
+  word-break: break-all;
+}
+
+.leader-mini-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44rpx;
+  width: fit-content;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 22rpx;
   font-weight: 900;
   color: var(--text-main);
 }
 
+.leader-mini-score.positive {
+  color: #f43f5e;
+}
+
+.leader-mini-score.negative {
+  color: #10b981;
+}
+
 .top-entry-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: 10rpx;
-  margin-top: 12rpx;
+  margin-top: 14rpx;
 }
 
 .entry-btn {
-  min-height: 94rpx;
-  padding: 12rpx 8rpx;
-  border-radius: 26rpx;
+  flex: 1;
+  min-height: 102rpx;
+  padding: 14rpx 10rpx;
+  border-radius: 28rpx;
   flex-direction: column;
-  gap: 6rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 12rpx 24rpx rgba(148, 163, 184, 0.1);
   min-width: 0;
 }
@@ -1825,6 +1966,13 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+.entry-kicker {
+  font-size: 18rpx;
+  font-weight: 800;
+  letter-spacing: 3rpx;
+  color: var(--text-light);
+}
+
 .entry-desc {
   max-width: 100%;
   font-size: 18rpx;
@@ -1841,17 +1989,18 @@ onUnmounted(() => {
 }
 
 .creator-close-pill {
-  min-height: 62rpx;
-  padding: 0 22rpx;
+  min-height: 58rpx;
+  padding: 0 20rpx;
   border-radius: 999rpx;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #fff1f2, #ffe4e6);
   color: #e11d48;
-  font-size: 22rpx;
+  font-size: 21rpx;
   font-weight: 900;
   box-shadow: 0 10rpx 20rpx rgba(244, 63, 94, 0.12);
+  flex-shrink: 0;
 }
 
 .player-strip-card {
@@ -1878,11 +2027,6 @@ onUnmounted(() => {
   color: var(--text-main);
 }
 
-.section-subtitle {
-  font-size: 22rpx;
-  color: var(--text-light);
-}
-
 .player-strip-scroll {
   white-space: nowrap;
   width: 100%;
@@ -1897,6 +2041,7 @@ onUnmounted(() => {
 }
 
 .player-square {
+  position: relative;
   width: 164rpx;
   min-width: 164rpx;
   height: 198rpx;
@@ -2038,52 +2183,29 @@ onUnmounted(() => {
   color: #fff;
 }
 
-.target-hint-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14rpx;
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 22rpx;
-  background: linear-gradient(180deg, #f7faff, #eef5ff);
-  border: 2rpx solid rgba(214, 226, 247, 0.8);
+.player-square.leader-reminder {
+  border-color: rgba(250, 204, 21, 0.96);
+  box-shadow: 0 0 0 4rpx rgba(250, 204, 21, 0.2), 0 18rpx 34rpx rgba(250, 204, 21, 0.24);
 }
 
-.target-hint-bar.active {
-  background: linear-gradient(180deg, #eef5ff, #dbeafe);
-  border-color: rgba(96, 165, 250, 0.6);
+.player-square.leader-reminder::after {
+  content: '';
+  position: absolute;
+  inset: -8rpx;
+  border-radius: 36rpx;
+  border: 4rpx solid rgba(250, 204, 21, 0.45);
+  animation: leader-reminder-pulse 1.15s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.target-hint-copy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
+.player-square.leader-reminder-strong::after {
+  border-width: 6rpx;
+  border-color: rgba(251, 191, 36, 0.62);
 }
 
-.target-hint-label {
-  font-size: 20rpx;
-  color: var(--text-light);
-}
-
-.target-hint-name {
-  font-size: 26rpx;
-  font-weight: 900;
-  color: var(--secondary-strong);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.target-hint-clear {
-  flex-shrink: 0;
-  padding: 12rpx 18rpx;
-  border-radius: 999rpx;
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
-  font-size: 22rpx;
-  font-weight: 800;
+.player-square.leader-reminder .player-square-marker.leader {
+  transform: scale(1.08);
+  box-shadow: 0 10rpx 22rpx rgba(245, 158, 11, 0.32);
 }
 
 .feed-section {
@@ -2098,41 +2220,8 @@ onUnmounted(() => {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 18rpx 18rpx 14rpx;
+  padding: 16rpx 18rpx 14rpx;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 247, 255, 0.88));
-}
-
-.feed-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding-bottom: 14rpx;
-}
-
-.card-title {
-  font-size: 30rpx;
-  font-weight: 900;
-  color: var(--text-main);
-  margin-bottom: 4rpx;
-}
-
-.feed-subtitle {
-  font-size: 22rpx;
-  color: var(--text-light);
-}
-
-.feed-counter {
-  min-width: 108rpx;
-  height: 56rpx;
-  border-radius: 28rpx;
-  background: #eef5ff;
-  color: var(--secondary-strong);
-  font-size: 24rpx;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .feed-scroll {
@@ -2144,55 +2233,100 @@ onUnmounted(() => {
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 14rpx;
   padding-bottom: 8rpx;
 }
 
 .feed-item {
   display: flex;
+  width: 100%;
 }
 
-.feed-item.message {
+.feed-item.other {
   justify-content: flex-start;
 }
 
-.feed-item.score {
+.feed-item.mine {
   justify-content: flex-end;
 }
 
-.feed-bubble {
-  max-width: 88%;
-  padding: 16rpx 18rpx;
-  border-radius: 24rpx;
-  box-shadow: 0 8rpx 18rpx rgba(148, 163, 184, 0.1);
+.feed-bubble-wrap {
+  width: min(100%, 560rpx);
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
 
-.feed-item.message .feed-bubble {
+.feed-item.mine .feed-bubble-wrap {
+  align-items: flex-end;
+}
+
+.feed-item-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  padding: 0 6rpx;
+}
+
+.feed-item-head-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.feed-item.mine .feed-item-head {
+  flex-direction: row-reverse;
+}
+
+.feed-item-name {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: var(--text-sub);
+}
+
+.feed-item-type {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--secondary-strong);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.feed-item.system .feed-item-type {
+  color: #be185d;
+  background: rgba(244, 114, 182, 0.14);
+}
+
+.feed-item.mine .feed-item-type {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.feed-bubble {
+  max-width: 100%;
+  padding: 18rpx 20rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 20rpx rgba(148, 163, 184, 0.1);
+}
+
+.feed-item.other .feed-bubble,
+.feed-item.system .feed-bubble {
   background: rgba(255, 255, 255, 0.96);
   border-top-left-radius: 10rpx;
 }
 
-.feed-item.score .feed-bubble {
-  background: linear-gradient(180deg, #fff7fb, #ffffff);
+.feed-item.mine .feed-bubble {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
   border-top-right-radius: 10rpx;
 }
 
 .feed-item.revoked .feed-bubble {
   opacity: 0.6;
-}
-
-.feed-item-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14rpx;
-  margin-bottom: 8rpx;
-}
-
-.feed-item-type {
-  font-size: 20rpx;
-  font-weight: 800;
-  color: var(--secondary-strong);
 }
 
 .feed-item-time,
@@ -2206,6 +2340,13 @@ onUnmounted(() => {
   font-size: 25rpx;
   line-height: 1.56;
   color: var(--text-main);
+}
+
+.feed-item.mine .feed-item-main,
+.feed-item.mine .feed-item-sub,
+.feed-item.mine .feed-item-time,
+.feed-item.mine .feed-item-name {
+  color: #fff;
 }
 
 .feed-item-sub {
@@ -2263,6 +2404,14 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.broadcast-banner.medium {
+  box-shadow: 0 22rpx 40rpx rgba(37, 99, 235, 0.24);
+}
+
+.broadcast-banner.strong {
+  box-shadow: 0 28rpx 56rpx rgba(245, 158, 11, 0.32);
+}
+
 .broadcast-banner.fury::before,
 .broadcast-banner.fury::after {
   content: '';
@@ -2282,6 +2431,14 @@ onUnmounted(() => {
 .broadcast-banner.fury::after {
   right: -28rpx;
   animation-delay: 0.25s;
+}
+
+.broadcast-banner.flash {
+  animation: broadcast-flash 2.6s ease forwards;
+}
+
+.broadcast-banner.spotlight {
+  animation: broadcast-spotlight 2.8s ease forwards;
 }
 
 .broadcast-banner.revoke {
@@ -2523,6 +2680,55 @@ onUnmounted(() => {
   }
 }
 
+@keyframes broadcast-flash {
+  0% {
+    opacity: 0;
+    transform: translateY(30rpx) scale(0.9);
+    filter: brightness(1);
+  }
+  14% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+    filter: brightness(1.12);
+  }
+  24% {
+    filter: brightness(1);
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18rpx) scale(0.98);
+  }
+}
+
+@keyframes broadcast-spotlight {
+  0% {
+    opacity: 0;
+    transform: translateY(36rpx) scale(0.88);
+    filter: brightness(1.04);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+    filter: brightness(1.18);
+  }
+  32% {
+    transform: translateY(-4rpx) scale(1.02);
+    filter: brightness(1.08);
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20rpx) scale(0.97);
+  }
+}
+
 @keyframes fury-glow {
   0%,
   100% {
@@ -2552,6 +2758,21 @@ onUnmounted(() => {
   100% {
     opacity: 0;
     transform: scale(1.2);
+  }
+}
+
+@keyframes leader-reminder-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.96);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
   }
 }
 
@@ -2677,26 +2898,6 @@ onUnmounted(() => {
 
 .bottom-dock {
   padding-top: 8rpx;
-}
-
-.chat-range-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14rpx;
-  margin-bottom: 10rpx;
-  padding: 0 6rpx;
-}
-
-.chat-range-label {
-  font-size: 22rpx;
-  color: var(--text-light);
-}
-
-.chat-range-value {
-  font-size: 22rpx;
-  font-weight: 800;
-  color: var(--primary-strong);
 }
 
 .chat-row {
@@ -3372,12 +3573,16 @@ onUnmounted(() => {
   }
 
   .entry-btn {
-    min-height: 84rpx;
-    padding: 10rpx 6rpx;
+    min-height: 92rpx;
+    padding: 12rpx 8rpx;
   }
 
   .entry-name {
     font-size: 21rpx;
+  }
+
+  .entry-kicker {
+    font-size: 16rpx;
   }
 
   .entry-desc {

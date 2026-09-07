@@ -1,5 +1,24 @@
 import { currentConfig } from '../config/env';
 
+const normalizeRequestError = (error) => {
+  const rawMessage = String(error?.errMsg || error?.message || '').trim();
+  const apiOrigin = String(currentConfig.API_BASE_URL || '').replace(/\/api\/?$/, '');
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return new Error('当前网络未连接，请先检查网络');
+  }
+
+  if (/timeout|Failed to fetch|ERR_CONNECTION_REFUSED|request:fail|unable to connect|无法连接到远程服务器|socket hang up/i.test(rawMessage)) {
+    return new Error(`后端服务暂时连不上，请检查 ${apiOrigin || '接口服务'} 是否已启动`);
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(rawMessage || '请求失败');
+};
+
 const request = ({ url, method = 'GET', data, auth = false }) => new Promise((resolve, reject) => {
   const token = uni.getStorageSync('token');
   const headers = {};
@@ -28,7 +47,7 @@ const request = ({ url, method = 'GET', data, auth = false }) => new Promise((re
       reject(new Error(payload.message || '请求失败'));
     },
     fail: (error) => {
-      reject(error);
+      reject(normalizeRequestError(error));
     }
   });
 });
